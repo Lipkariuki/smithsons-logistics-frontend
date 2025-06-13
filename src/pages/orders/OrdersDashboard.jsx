@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axiosAuth from "../../utils/axiosAuth";
 
 const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -9,19 +9,19 @@ const AdminOrdersPage = () => {
   const [editFormData, setEditFormData] = useState({});
 
   const fetchOrders = () => {
-    axios.get("http://localhost:8000/admin/orders")
+    axiosAuth.get("/admin/orders")
       .then((res) => setOrders(res.data))
       .catch((err) => console.error("Fetch orders failed:", err));
   };
 
   const fetchDrivers = () => {
-    axios.get("http://localhost:8000/users/?role=driver")
+    axiosAuth.get("/users/?role=driver")
       .then((res) => setAvailableDrivers(res.data))
       .catch((err) => console.error("Fetch drivers failed:", err));
   };
 
   const fetchVehicles = () => {
-    axios.get("http://localhost:8000/vehicles")
+    axiosAuth.get("/vehicles")
       .then((res) => setAvailableVehicles(res.data))
       .catch((err) => console.error("Fetch vehicles failed:", err));
   };
@@ -35,21 +35,21 @@ const AdminOrdersPage = () => {
   const handleSaveClick = async (orderId) => {
     try {
       if (editFormData.driver_id) {
-        await axios.put(`http://localhost:8000/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`);
+        await axiosAuth.put(`/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`);
       }
       if (editFormData.vehicle_id) {
-        await axios.put(`http://localhost:8000/orders/${orderId}/assign-vehicle?vehicle_id=${editFormData.vehicle_id}`);
+        await axiosAuth.put(`/orders/${orderId}/assign-vehicle?vehicle_id=${editFormData.vehicle_id}`);
       }
       if (editFormData.expense_amount && editFormData.trip_id) {
-        await axios.post("http://localhost:8000/expenses/", {
+        await axiosAuth.post("/expenses/", {
           trip_id: editFormData.trip_id,
           amount: parseFloat(editFormData.expense_amount),
           description: editFormData.expense_description,
         });
       }
       if (editFormData.commission_rate && editFormData.trip_id) {
-        await axios.put(
-          `http://localhost:8000/commissions/${editFormData.trip_id}`,
+        await axiosAuth.put(
+          `/commissions/${editFormData.trip_id}`,
           null,
           {
             params: {
