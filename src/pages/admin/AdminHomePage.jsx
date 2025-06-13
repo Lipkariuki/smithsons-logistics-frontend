@@ -8,15 +8,15 @@ const AdminHomePage = () => {
     {
       name: "Financial Dashboard",
       description: "View revenue, commissions, and expense summaries.",
-      path: "/admin/finance", // 
+      path: "/admin/finance",
     },
     {
       name: "Orders Dashboard",
       description: "Browse all raw orders, truck assignments, and trip statuses.",
-      path: "/admin/orders", // 
+      path: "/admin/orders",
     },
   ];
-  
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-3xl font-bold text-purple-700 mb-6">Admin Dashboards</h1>

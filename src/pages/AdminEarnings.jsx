@@ -8,14 +8,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import axios from "../utils/axiosAuth"; // ✅ Use shared axios instance
 
 function AdminEarnings() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/admin/earnings")
-      .then((res) => res.json())
-      .then(setData)
+    axios.get("/admin/earnings") // ✅ No more localhost
+      .then((res) => setData(res.data))
       .catch((err) => console.error("Failed to fetch admin earnings:", err));
   }, []);
 

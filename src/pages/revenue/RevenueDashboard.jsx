@@ -203,7 +203,7 @@ const RevenueDashboard = () => {
 const SummaryCard = ({ label, value, color, bold }) => (
   <div className="bg-white p-4 rounded-lg shadow">
     <h2 className="text-sm text-gray-500">{label}</h2>
-    <p className={`text-xl font-${bold ? "bold" : "semibold"} text-${color}`}>
+    <p className={`text-xl ${bold ? "font-bold" : "font-semibold"} text-${color}`}>
       {value.toLocaleString()} KES
     </p>
   </div>

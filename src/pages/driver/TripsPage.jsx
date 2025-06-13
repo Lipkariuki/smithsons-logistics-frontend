@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "../../utils/axiosAuth";
 
 const TripsPage = () => {
   const [trips, setTrips] = useState([]);
@@ -6,13 +7,10 @@ const TripsPage = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:8000/trips/")
+    axios
+      .get("/trips/")
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch trips");
-        return res.json();
-      })
-      .then((data) => {
-        setTrips(data);
+        setTrips(res.data);
         setLoading(false);
       })
       .catch((err) => {
@@ -62,9 +60,7 @@ const TripsPage = () => {
                   {trip.destination || <span className="italic text-gray-400">N/A</span>}
                 </td>
                 <td className="px-4 py-3">
-                  {trip.created_at
-                    ? new Date(trip.created_at).toLocaleString()
-                    : "N/A"}
+                  {trip.created_at ? new Date(trip.created_at).toLocaleString() : "N/A"}
                 </td>
               </tr>
             ))}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "../../utils/axiosAuth"; // ✅ custom axios with token
 
 const PartnerOrdersDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -11,25 +12,8 @@ const PartnerOrdersDashboard = () => {
       setError("");
 
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found. Please login.");
-        }
-
-        // Decode JWT to extract user ID (sub)
-        const base64Url = token.split(".")[1];
-        const decodedPayload = JSON.parse(atob(base64Url));
-        const ownerId = decodedPayload.sub;
-
-        const res = await fetch(`http://localhost:8000/partner/orders?owner_id=${ownerId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) throw new Error(`Failed with status ${res.status}`);
-        const data = await res.json();
-        setOrders(data);
+        const res = await axios.get("/partner/orders");
+        setOrders(res.data);
       } catch (err) {
         console.error("Error fetching partner orders:", err);
         setError("Could not load partner orders.");

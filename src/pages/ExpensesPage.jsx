@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../utils/axiosAuth"; // ✅ use the shared axios instance
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
@@ -12,7 +12,7 @@ const ExpensesPage = () => {
 
   const fetchExpenses = () => {
     axios
-      .get("http://localhost:8000/expenses/")
+      .get("/expenses/")
       .then((res) => setExpenses(res.data))
       .catch((err) => console.error("Failed to fetch expenses:", err));
   };
@@ -20,7 +20,7 @@ const ExpensesPage = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:8000/expenses/", {
+      await axios.post("/expenses/", {
         trip_id: parseInt(formData.trip_id),
         amount: parseFloat(formData.amount),
         description: formData.description,
@@ -111,7 +111,9 @@ const ExpensesPage = () => {
                   <td className="py-2 px-4">{exp.destination || "-"}</td>
                   <td className="py-2 px-4">{exp.amount.toLocaleString()}</td>
                   <td className="py-2 px-4">{exp.description}</td>
-                  <td className="py-2 px-4">{new Date(exp.timestamp).toLocaleString()}</td>
+                  <td className="py-2 px-4">
+                    {new Date(exp.timestamp).toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -1,27 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; // ✅ add this
+import { Link } from "react-router-dom";
+import axios from "../../utils/axiosAuth"; // ✅ use secure axios instance
 
 const OwnerDashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    fetch("http://localhost:8000/partner-dashboard/", {
-      headers: {
-        Authorization: `Bearer ${token}`, // ✅ ensures auth
-      },
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`API responded with ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setMetrics(data);
-      })
+    axios
+      .get("/partner-dashboard/")
+      .then((res) => setMetrics(res.data))
       .catch((err) => {
         console.error("Failed to load metrics:", err);
         setError(err.message);
@@ -44,50 +32,33 @@ const OwnerDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="text-sm text-gray-500">Net Earnings</h3>
-          <p className="text-xl font-semibold text-green-600">
-            KES {metrics.netEarnings.toLocaleString()}
-          </p>
+          <p className="text-xl font-semibold text-green-600">KES {metrics.netEarnings.toLocaleString()}</p>
         </div>
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="text-sm text-gray-500">Total Expenses</h3>
-          <p className="text-xl font-semibold text-red-500">
-            KES {metrics.expensesTotal.toLocaleString()}
-          </p>
+          <p className="text-xl font-semibold text-red-500">KES {metrics.expensesTotal.toLocaleString()}</p>
         </div>
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="text-sm text-gray-500">Total Commission</h3>
-          <p className="text-xl font-semibold text-blue-500">
-            KES {metrics.commissionTotal.toLocaleString()}
-          </p>
+          <p className="text-xl font-semibold text-blue-500">KES {metrics.commissionTotal.toLocaleString()}</p>
         </div>
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="text-sm text-gray-500">Revenue This Month</h3>
-          <p className="text-xl font-semibold text-purple-600">
-            KES {metrics.monthRevenue.toLocaleString()}
-          </p>
+          <p className="text-xl font-semibold text-purple-600">KES {metrics.monthRevenue.toLocaleString()}</p>
         </div>
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="text-sm text-gray-500">Total Revenue</h3>
-          <p className="text-xl font-semibold text-gray-800">
-            KES {metrics.totalRevenue.toLocaleString()}
-          </p>
+          <p className="text-xl font-semibold text-gray-800">KES {metrics.totalRevenue.toLocaleString()}</p>
         </div>
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="text-sm text-gray-500">Pending Orders</h3>
-          <p className="text-xl font-semibold text-orange-500">
-            KES {metrics.pending.toLocaleString()}
-          </p>
+          <p className="text-xl font-semibold text-orange-500">KES {metrics.pending.toLocaleString()}</p>
         </div>
 
         {/* ✅ New Orders Navigation Card */}
-        <Link
-          to="/partner/orders"
-          className="p-4 bg-blue-100 hover:bg-blue-200 transition rounded-lg shadow flex flex-col justify-center"
-        >
+        <Link to="/partner/orders" className="p-4 bg-blue-100 hover:bg-blue-200 transition rounded-lg shadow flex flex-col justify-center">
           <h3 className="text-sm text-gray-600">📦 View Your Orders</h3>
-          <p className="text-base font-semibold text-blue-800 mt-2">
-            Go to Orders Dashboard
-          </p>
+          <p className="text-base font-semibold text-blue-800 mt-2">Go to Orders Dashboard</p>
         </Link>
       </div>
 
@@ -113,8 +84,7 @@ const OwnerDashboard = () => {
         <ul className="text-sm space-y-1">
           {metrics.revenueTrend.map((m) => (
             <li key={m.month}>
-              <span className="font-medium">Month {m.month}:</span>{" "}
-              KES {m.revenue.toLocaleString()}
+              <span className="font-medium">Month {m.month}:</span> KES {m.revenue.toLocaleString()}
             </li>
           ))}
         </ul>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { jwtDecode } from "jwt-decode"; // ✅ correct named import
+import axios from "../utils/axiosAuth"; // ✅ use shared instance
+import { jwtDecode } from "jwt-decode";
 
 const Login = () => {
   const [phone, setPhone] = useState("");
@@ -18,7 +18,7 @@ const Login = () => {
       params.append("username", phone);
       params.append("password", password);
 
-      const response = await axios.post("http://127.0.0.1:8000/login", params, {
+      const response = await axios.post("/login", params, {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
@@ -27,7 +27,7 @@ const Login = () => {
       const token = response.data.access_token;
       localStorage.setItem("token", token);
 
-      const decoded = jwtDecode(token); // ✅ works now
+      const decoded = jwtDecode(token);
       const role = decoded.role;
 
       if (role === "admin") {
