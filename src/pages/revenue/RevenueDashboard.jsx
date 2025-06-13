@@ -21,44 +21,64 @@ const RevenueDashboard = () => {
   const [drivers, setDrivers] = useState([]);
   const [partners, setPartners] = useState([]);
 
-  const applyFilters = () => {
-    const queryParams = new URLSearchParams();
-    if (filterDraft.month) queryParams.append("month", filterDraft.month);
+  const safeArray = Array.isArray(filtered) ? filtered : [];
 
-    axios.get(`/orders?${queryParams.toString()}`).then((res) => {
-      let data = Array.isArray(res.data) ? res.data : [];
+  const applyFilters = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (filterDraft.month) queryParams.append("month", filterDraft.month);
+      const res = await axios.get(`/orders?${queryParams.toString()}`);
+
+      let data = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.orders)
+        ? res.data.orders
+        : [];
 
       if (filterDraft.product) {
-        data = data.filter(order => order.product_description?.toLowerCase().includes(filterDraft.product.toLowerCase()));
+        data = data.filter((o) =>
+          o.product_description?.toLowerCase().includes(filterDraft.product.toLowerCase())
+        );
       }
       if (filterDraft.driver) {
-        data = data.filter(order => order.driver_id == filterDraft.driver);
+        data = data.filter((o) => o.driver_id == filterDraft.driver);
       }
       if (filterDraft.partner) {
-        data = data.filter(order => order.owner_id == filterDraft.partner);
+        data = data.filter((o) => o.owner_id == filterDraft.partner);
       }
 
       setOrders(data);
       setFiltered(data);
-    });
+    } catch (err) {
+      console.error("Error fetching filtered orders:", err);
+      setOrders([]);
+      setFiltered([]);
+    }
   };
 
-  const resetFilters = () => {
-    setFilterDraft({ month: "", product: "", driver: "", partner: "" });
-    axios.get("/orders").then((res) => {
-      const safeData = Array.isArray(res.data) ? res.data : [];
-      setOrders(safeData);
-      setFiltered(safeData);
-    });
+  const resetFilters = async () => {
+    try {
+      setFilterDraft({ month: "", product: "", driver: "", partner: "" });
+      const res = await axios.get("/orders");
+      const data = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.orders)
+        ? res.data.orders
+        : [];
+      setOrders(data);
+      setFiltered(data);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      setOrders([]);
+      setFiltered([]);
+    }
   };
 
   useEffect(() => {
     resetFilters();
-    axios.get("/users/?role=driver").then((res) => setDrivers(res.data));
-    axios.get("/users/?role=partner").then((res) => setPartners(res.data));
+    axios.get("/users/?role=driver").then((res) => setDrivers(res.data)).catch(() => {});
+    axios.get("/users/?role=partner").then((res) => setPartners(res.data)).catch(() => {});
   }, []);
-
-  const safeArray = Array.isArray(filtered) ? filtered : [];
 
   const totalAmount = safeArray.reduce((sum, o) => sum + (o.total_amount || 0), 0);
   const totalExpenses = safeArray.reduce((sum, o) => sum + (o.expenses || 0), 0);
@@ -66,12 +86,16 @@ const RevenueDashboard = () => {
   const totalRevenue = totalAmount - totalExpenses - totalCommission;
 
   const chartData = {
-    labels: safeArray.map(o => `Order ${o.id}`),
-    datasets: [{
-      label: "Revenue",
-      data: safeArray.map(o => (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0)),
-      backgroundColor: "#10b981",
-    }],
+    labels: safeArray.map((o) => `Order ${o.id}`),
+    datasets: [
+      {
+        label: "Revenue",
+        data: safeArray.map(
+          (o) => (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0)
+        ),
+        backgroundColor: "#10b981",
+      },
+    ],
   };
 
   const headers = [
@@ -83,7 +107,7 @@ const RevenueDashboard = () => {
     { label: "Revenue", key: "revenue" },
   ];
 
-  const dataForExport = safeArray.map(order => ({
+  const dataForExport = safeArray.map((order) => ({
     ...order,
     revenue: (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0),
   }));
@@ -101,7 +125,7 @@ const RevenueDashboard = () => {
         <select value={filterDraft.month} onChange={(e) => setFilterDraft({ ...filterDraft, month: e.target.value })} className="border p-2 rounded">
           <option value="">All Months</option>
           {[...Array(12)].map((_, i) => (
-            <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+            <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString("default", { month: "long" })}</option>
           ))}
         </select>
         <input
@@ -113,11 +137,15 @@ const RevenueDashboard = () => {
         />
         <select value={filterDraft.driver} onChange={(e) => setFilterDraft({ ...filterDraft, driver: e.target.value })} className="border p-2 rounded">
           <option value="">All Drivers</option>
-          {drivers.map(driver => <option key={driver.id} value={driver.id}>{driver.name}</option>)}
+          {drivers.map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
         </select>
         <select value={filterDraft.partner} onChange={(e) => setFilterDraft({ ...filterDraft, partner: e.target.value })} className="border p-2 rounded">
           <option value="">All Partners</option>
-          {partners.map(partner => <option key={partner.id} value={partner.id}>{partner.name}</option>)}
+          {partners.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
         </select>
         <button onClick={applyFilters} className="bg-green-600 text-white px-4 py-2 rounded">Apply Filters</button>
         <button onClick={resetFilters} className="bg-gray-500 text-white px-4 py-2 rounded">Reset</button>
@@ -140,7 +168,7 @@ const RevenueDashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {safeArray.map(order => {
+            {safeArray.map((order) => {
               const revenue = (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0);
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50">
