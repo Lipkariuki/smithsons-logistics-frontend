@@ -26,7 +26,8 @@ const RevenueDashboard = () => {
     if (filterDraft.month) queryParams.append("month", filterDraft.month);
 
     axios.get(`/orders?${queryParams.toString()}`).then((res) => {
-      let data = res.data;
+      let data = Array.isArray(res.data) ? res.data : [];
+
       if (filterDraft.product) {
         data = data.filter(order => order.product_description?.toLowerCase().includes(filterDraft.product.toLowerCase()));
       }
@@ -36,6 +37,7 @@ const RevenueDashboard = () => {
       if (filterDraft.partner) {
         data = data.filter(order => order.owner_id == filterDraft.partner);
       }
+
       setOrders(data);
       setFiltered(data);
     });
@@ -44,8 +46,9 @@ const RevenueDashboard = () => {
   const resetFilters = () => {
     setFilterDraft({ month: "", product: "", driver: "", partner: "" });
     axios.get("/orders").then((res) => {
-      setOrders(res.data);
-      setFiltered(res.data);
+      const safeData = Array.isArray(res.data) ? res.data : [];
+      setOrders(safeData);
+      setFiltered(safeData);
     });
   };
 
@@ -55,16 +58,18 @@ const RevenueDashboard = () => {
     axios.get("/users/?role=partner").then((res) => setPartners(res.data));
   }, []);
 
-  const totalAmount = filtered.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-  const totalExpenses = filtered.reduce((sum, o) => sum + (o.expenses || 0), 0);
-  const totalCommission = filtered.reduce((sum, o) => sum + (o.commission || 0), 0);
+  const safeArray = Array.isArray(filtered) ? filtered : [];
+
+  const totalAmount = safeArray.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  const totalExpenses = safeArray.reduce((sum, o) => sum + (o.expenses || 0), 0);
+  const totalCommission = safeArray.reduce((sum, o) => sum + (o.commission || 0), 0);
   const totalRevenue = totalAmount - totalExpenses - totalCommission;
 
   const chartData = {
-    labels: filtered.map(o => `Order ${o.id}`),
+    labels: safeArray.map(o => `Order ${o.id}`),
     datasets: [{
       label: "Revenue",
-      data: filtered.map(o => (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0)),
+      data: safeArray.map(o => (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0)),
       backgroundColor: "#10b981",
     }],
   };
@@ -78,7 +83,7 @@ const RevenueDashboard = () => {
     { label: "Revenue", key: "revenue" },
   ];
 
-  const dataForExport = filtered.map(order => ({
+  const dataForExport = safeArray.map(order => ({
     ...order,
     revenue: (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0),
   }));
@@ -135,7 +140,7 @@ const RevenueDashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(order => {
+            {safeArray.map(order => {
               const revenue = (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0);
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50">
