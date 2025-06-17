@@ -43,6 +43,8 @@ const App = () => {
   );
 };
 console.log("BASE URL:", import.meta.env.VITE_API_BASE_URL);
+console.log("Rebuild trigger test");
+
 
 
 export default App;
