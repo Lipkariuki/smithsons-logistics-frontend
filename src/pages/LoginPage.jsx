@@ -18,7 +18,7 @@ const Login = () => {
       params.append("username", phone);
       params.append("password", password);
 
-      const response = await axios.post("/login", params, {
+      const response = await axios.post("login", params, {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
