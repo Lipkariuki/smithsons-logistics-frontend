@@ -7,8 +7,13 @@ import SidebarLayout from "./layouts/SidebarLayout";
 import AdminHomePage from "./pages/admin/AdminHomePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import OrdersDashboard from "./pages/orders/OrdersDashboard";
-import OwnerDashboard from "./pages/partners/OwnerDashboard"; // ✅ RELOCATED
-import TripsPage from "./pages/driver/TripsPage";
+import OwnerDashboard from "./pages/partners/OwnerDashboard";
+import AdminTripsPage from "./pages/admin/AdminTripsPage"; // ✅ create this
+
+import DriverHomePage from "./pages/driver/DriverHomePage";
+import DriverTripsPage from "./pages/driver/DriverTripsPage";
+import DriverExpensesPage from "./pages/driver/DriverExpensesPage";
+
 import ExpensesPage from "./pages/ExpensesPage";
 import ReportsPage from "./pages/ReportsPage";
 import RevenueDashboard from "./pages/revenue/RevenueDashboard";
@@ -26,8 +31,7 @@ const App = () => {
         <Route path="home" element={<AdminHomePage />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="orders" element={<OrdersDashboard />} />
-        <Route path="owner" element={<TripsPage />} />
-        <Route path="trips" element={<TripsPage />} />
+        <Route path="trips" element={<AdminTripsPage />} /> {/* ✅ new */}
         <Route path="expenses" element={<ExpensesPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="finance" element={<RevenueDashboard />} />
@@ -35,16 +39,18 @@ const App = () => {
       </Route>
 
       {/* Partner/owner routes */}
-      <Route path="/partner/dashboard" element={<OwnerDashboard />} /> {/* ✅ owner view */}
+      <Route path="/partner/dashboard" element={<OwnerDashboard />} />
       <Route path="/partner/orders" element={<PartnerOrdersDashboard />} />
 
+      {/* ✅ Driver routes */}
+      <Route path="/driver/home" element={<DriverHomePage />} />
+      <Route path="/driver/trips" element={<DriverTripsPage />} />
+      <Route path="/driver/expenses" element={<DriverExpensesPage />} />
+
+      {/* fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };
-console.log("BASE URL:", import.meta.env.VITE_API_BASE_URL);
-console.log("Rebuild trigger test");
-
-
 
 export default App;

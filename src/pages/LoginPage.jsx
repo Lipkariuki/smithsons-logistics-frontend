@@ -28,18 +28,20 @@ const Login = () => {
       localStorage.setItem("token", token);
 
       const decoded = jwtDecode(token);
+      console.log("✅ Decoded JWT:", decoded);
       const role = decoded.role;
+      console.log("➡️ Role from token:", role);
 
       if (role === "admin") {
         navigate("/admin/dashboard");
       } else if (role === "owner") {
         navigate("/partner/dashboard");
       } else if (role === "driver") {
-        navigate("/driver/trips");
+        navigate("/driver/home");
       } else {
         setError("Unknown user role. Access denied.");
+        console.warn("⚠️ Unknown role:", role);
       }
-
     } catch (err) {
       console.error("Login failed:", err);
       setError("Invalid phone or password");
