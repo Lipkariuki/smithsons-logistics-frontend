@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosAuth"; // ✅ custom axios with token
 
 const PartnerOrdersDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -26,20 +27,53 @@ const PartnerOrdersDashboard = () => {
     fetchOrders();
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
   if (loading) return <p className="p-4">Loading orders...</p>;
   if (error) return <p className="p-4 text-red-500">{error}</p>;
 
   return (
     <div className="p-6">
-      {/* ✅ Header with Back Button */}
+      {/* ✅ Header with Back Button and Settings */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-purple-700">My Orders</h1>
-        <Link
-          to="/partner/dashboard"
-          className="bg-purple-100 text-purple-800 font-medium px-4 py-2 rounded hover:bg-purple-200"
-        >
-          🏠 Back to Home
-        </Link>
+        <div className="flex items-center space-x-4">
+          <h1 className="text-2xl font-bold text-purple-700">My Orders</h1>
+          <Link
+            to="/partner/dashboard"
+            className="bg-purple-100 text-purple-800 font-medium px-4 py-2 rounded hover:bg-purple-200"
+          >
+            🏠 Back to Home
+          </Link>
+        </div>
+
+        {/* ✅ Settings Dropdown */}
+        <div className="relative inline-block text-left">
+          <button
+            type="button"
+            className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            ⚙️ Settings
+          </button>
+          <div className="absolute right-0 mt-2 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+            <div className="py-1">
+              <button
+                onClick={() => navigate("/partner/profile")}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                🧑 Profile Settings
+              </button>
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100"
+              >
+                🚪 Logout
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ✅ Table */}
