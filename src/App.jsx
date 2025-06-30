@@ -4,11 +4,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import SidebarLayout from "./layouts/SidebarLayout";
 
-import AdminHomePage from "./pages/admin/AdminHomePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import OrdersDashboard from "./pages/orders/OrdersDashboard";
 import OwnerDashboard from "./pages/partners/OwnerDashboard";
-import AdminTripsPage from "./pages/admin/AdminTripsPage"; // ✅ create this
+import AdminTripsPage from "./pages/admin/AdminTripsPage";
 
 import DriverHomePage from "./pages/driver/DriverHomePage";
 import DriverTripsPage from "./pages/driver/DriverTripsPage";
@@ -27,11 +26,11 @@ const App = () => {
 
       {/* Admin routes */}
       <Route path="/admin" element={<SidebarLayout />}>
-        <Route index element={<AdminHomePage />} />
-        <Route path="home" element={<AdminHomePage />} />
+        <Route index element={<AdminDashboard />} />
+        <Route path="home" element={<Navigate to="/admin/dashboard" />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="orders" element={<OrdersDashboard />} />
-        <Route path="trips" element={<AdminTripsPage />} /> {/* ✅ new */}
+        <Route path="trips" element={<AdminTripsPage />} />
         <Route path="expenses" element={<ExpensesPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="finance" element={<RevenueDashboard />} />
@@ -42,7 +41,7 @@ const App = () => {
       <Route path="/partner/dashboard" element={<OwnerDashboard />} />
       <Route path="/partner/orders" element={<PartnerOrdersDashboard />} />
 
-      {/* ✅ Driver routes */}
+      {/* Driver routes */}
       <Route path="/driver/home" element={<DriverHomePage />} />
       <Route path="/driver/trips" element={<DriverTripsPage />} />
       <Route path="/driver/expenses" element={<DriverExpensesPage />} />

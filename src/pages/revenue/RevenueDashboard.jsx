@@ -27,7 +27,7 @@ const RevenueDashboard = () => {
     try {
       const queryParams = new URLSearchParams();
       if (filterDraft.month) queryParams.append("month", filterDraft.month);
-      const res = await axios.get(`/orders?${queryParams.toString()}`);
+      const res = await axios.get(`/admin/orders?${queryParams.toString()}`);
 
       let data = Array.isArray(res.data)
         ? res.data
@@ -59,7 +59,7 @@ const RevenueDashboard = () => {
   const resetFilters = async () => {
     try {
       setFilterDraft({ month: "", product: "", driver: "", partner: "" });
-      const res = await axios.get("/orders");
+      const res = await axios.get("/admin/orders");
       const data = Array.isArray(res.data)
         ? res.data
         : Array.isArray(res.data.orders)

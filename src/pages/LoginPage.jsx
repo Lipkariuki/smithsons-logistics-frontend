@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../utils/axiosAuth"; // ✅ use shared instance
+import axios from "../utils/axiosAuth";
 import { jwtDecode } from "jwt-decode";
 
 const Login = () => {
@@ -28,9 +28,7 @@ const Login = () => {
       localStorage.setItem("token", token);
 
       const decoded = jwtDecode(token);
-      console.log("✅ Decoded JWT:", decoded);
       const role = decoded.role;
-      console.log("➡️ Role from token:", role);
 
       if (role === "admin") {
         navigate("/admin/dashboard");
@@ -40,12 +38,15 @@ const Login = () => {
         navigate("/driver/home");
       } else {
         setError("Unknown user role. Access denied.");
-        console.warn("⚠️ Unknown role:", role);
       }
     } catch (err) {
       console.error("Login failed:", err);
       setError("Invalid phone or password");
     }
+  };
+
+  const handleSignupClick = () => {
+    alert("🚧 Signup is currently disabled. Please contact admin.");
   };
 
   return (
@@ -79,6 +80,16 @@ const Login = () => {
             Login
           </button>
         </form>
+
+        <div className="text-center mt-4 text-sm text-gray-600">
+          Don’t have an account?{" "}
+          <button
+            onClick={handleSignupClick}
+            className="text-purple-700 font-medium hover:underline"
+          >
+            Sign up
+          </button>
+        </div>
       </div>
     </div>
   );

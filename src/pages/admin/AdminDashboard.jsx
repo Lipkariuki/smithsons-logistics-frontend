@@ -78,7 +78,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow-md px-6 py-4">
         <h1 className="text-2xl font-bold text-purple-700">Admin Dashboards</h1>
-        <p className="text-sm text-gray-500">Overview of partner, order, and financial performance</p>
+        <p className="text-sm text-gray-500">Overview of orders and financial performance</p>
       </header>
 
       <main className="p-6 space-y-6">
@@ -90,10 +90,6 @@ const AdminDashboard = () => {
           <Link to="/admin/orders" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
             <h3 className="text-lg font-bold text-gray-800">Orders Dashboard</h3>
             <p className="text-sm text-gray-600">Browse all raw orders, truck assignments, and trip statuses.</p>
-          </Link>
-          <Link to="/partner/dashboard" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
-            <h3 className="text-lg font-bold text-gray-800">Partner Dashboard</h3>
-            <p className="text-sm text-gray-600">Monitor partner revenue, trips, and driver performance.</p>
           </Link>
         </section>
 
