@@ -65,7 +65,10 @@ const CreateOrderForm = ({ onSuccess }) => {
       </button>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 border rounded p-4 bg-gray-50"
+        >
           <input
             type="text"
             name="order_number"
@@ -102,15 +105,24 @@ const CreateOrderForm = ({ onSuccess }) => {
             required
             className="p-2 border rounded"
           />
-          <input
-            type="text"
+
+          {/* Select truck plate from vehicles */}
+          <select
             name="truck_plate"
-            placeholder="Truck Plate"
             value={formData.truck_plate}
             onChange={handleChange}
             required
             className="p-2 border rounded"
-          />
+          >
+            <option value="">Select Truck</option>
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.plate_number}>
+                {v.plate_number}
+              </option>
+            ))}
+          </select>
+
+          {/* Driver dropdown */}
           <select
             name="driver_id"
             value={formData.driver_id}
@@ -120,9 +132,13 @@ const CreateOrderForm = ({ onSuccess }) => {
           >
             <option value="">Assign Driver</option>
             {drivers.map((d) => (
-              <option key={d.id} value={d.id}>{d.name}</option>
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
             ))}
           </select>
+
+          {/* Vehicle ID dropdown */}
           <select
             name="vehicle_id"
             value={formData.vehicle_id}
@@ -132,9 +148,12 @@ const CreateOrderForm = ({ onSuccess }) => {
           >
             <option value="">Assign Vehicle</option>
             {vehicles.map((v) => (
-              <option key={v.id} value={v.id}>{v.plate_number}</option>
+              <option key={v.id} value={v.id}>
+                {v.plate_number}
+              </option>
             ))}
           </select>
+
           <input
             type="number"
             name="cases"
@@ -164,7 +183,7 @@ const CreateOrderForm = ({ onSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="col-span-1 md:col-span-2 bg-purple-600 text-white p-2 rounded hover:bg-purple-700 transition"
+            className="col-span-1 md:col-span-2 bg-green-600 text-white p-2 rounded hover:bg-green-700 transition"
           >
             {loading ? "Creating..." : "Submit Order"}
           </button>

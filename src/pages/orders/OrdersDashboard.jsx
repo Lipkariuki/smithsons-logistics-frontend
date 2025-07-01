@@ -152,7 +152,6 @@ const AdminOrdersPage = () => {
             "date",
             "product_type",
             "product_description",
-            "truck_plate",
             "destination",
             "cases",
             "price_per_case",
@@ -165,10 +164,25 @@ const AdminOrdersPage = () => {
               placeholder={field.replace(/_/g, " ").toUpperCase()}
               value={createForm[field]}
               onChange={handleCreateChange}
-              required={["order_number", "invoice_number", "truck_plate", "destination", "total_amount"].includes(field)}
+              required={["order_number", "invoice_number", "destination", "total_amount"].includes(field)}
               className="p-2 border rounded"
             />
           ))}
+
+          {/* Truck plate dropdown from vehicles */}
+          <select
+            name="truck_plate"
+            value={createForm.truck_plate}
+            onChange={handleCreateChange}
+            required
+            className="p-2 border rounded"
+          >
+            <option value="">Select Truck</option>
+            {availableVehicles.map((v) => (
+              <option key={v.id} value={v.plate_number}>{v.plate_number}</option>
+            ))}
+          </select>
+
           <button
             type="submit"
             className="col-span-1 md:col-span-2 bg-green-600 text-white p-2 rounded hover:bg-green-700"
@@ -183,6 +197,7 @@ const AdminOrdersPage = () => {
           <thead className="bg-gray-100 text-gray-700 text-center">
             <tr>
               <th className="px-4 py-2">Order ID</th>
+              <th className="px-4 py-2">Order No</th>
               <th className="px-4 py-2">Invoice</th>
               <th className="px-4 py-2">Driver</th>
               <th className="px-4 py-2">Vehicle</th>
@@ -200,6 +215,7 @@ const AdminOrdersPage = () => {
               return (
                 <tr key={order.id} className="border-t text-center">
                   <td className="px-4 py-2">{order.id}</td>
+                  <td className="px-4 py-2">{order.order_number}</td>
                   <td className="px-4 py-2">{order.invoice_number}</td>
                   <td className="px-4 py-2">
                     {isEditing ? (
