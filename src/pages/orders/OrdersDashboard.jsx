@@ -7,6 +7,21 @@ const AdminOrdersPage = () => {
   const [availableVehicles, setAvailableVehicles] = useState([]);
   const [editRowId, setEditRowId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    order_number: "",
+    invoice_number: "",
+    purchase_order_number: "",
+    dispatch_note_number: "",
+    date: "",
+    product_type: "",
+    product_description: "",
+    truck_plate: "",
+    destination: "",
+    cases: "",
+    price_per_case: "",
+    total_amount: "",
+  });
 
   const fetchOrders = () => {
     axiosAuth.get("/admin/orders")
@@ -31,6 +46,35 @@ const AdminOrdersPage = () => {
     fetchDrivers();
     fetchVehicles();
   }, []);
+
+  const handleCreateChange = (e) => {
+    setCreateForm({ ...createForm, [e.target.name]: e.target.value });
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axiosAuth.post("/orders", createForm);
+      setCreateForm({
+        order_number: "",
+        invoice_number: "",
+        purchase_order_number: "",
+        dispatch_note_number: "",
+        date: "",
+        product_type: "",
+        product_description: "",
+        truck_plate: "",
+        destination: "",
+        cases: "",
+        price_per_case: "",
+        total_amount: "",
+      });
+      setShowCreateForm(false);
+      fetchOrders();
+    } catch (err) {
+      console.error("Create order failed:", err.response?.data);
+    }
+  };
 
   const handleSaveClick = async (orderId) => {
     try {
@@ -87,6 +131,53 @@ const AdminOrdersPage = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-purple-700 mb-4">Admin Orders</h1>
+
+      <button
+        onClick={() => setShowCreateForm(!showCreateForm)}
+        className="mb-4 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+      >
+        {showCreateForm ? "Close Order Form" : "Create New Order"}
+      </button>
+
+      {showCreateForm && (
+        <form
+          onSubmit={handleCreateSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded border"
+        >
+          {[
+            "order_number",
+            "invoice_number",
+            "purchase_order_number",
+            "dispatch_note_number",
+            "date",
+            "product_type",
+            "product_description",
+            "truck_plate",
+            "destination",
+            "cases",
+            "price_per_case",
+            "total_amount",
+          ].map((field) => (
+            <input
+              key={field}
+              name={field}
+              type={field === "date" ? "date" : "text"}
+              placeholder={field.replace(/_/g, " ").toUpperCase()}
+              value={createForm[field]}
+              onChange={handleCreateChange}
+              required={["order_number", "invoice_number", "truck_plate", "destination", "total_amount"].includes(field)}
+              className="p-2 border rounded"
+            />
+          ))}
+          <button
+            type="submit"
+            className="col-span-1 md:col-span-2 bg-green-600 text-white p-2 rounded hover:bg-green-700"
+          >
+            Submit Order
+          </button>
+        </form>
+      )}
+
       <div className="overflow-x-auto rounded border border-gray-300 shadow">
         <table className="min-w-full bg-white text-sm text-left">
           <thead className="bg-gray-100 text-gray-700 text-center">

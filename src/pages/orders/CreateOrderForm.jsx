@@ -3,6 +3,7 @@ import axios from "../../utils/axiosAuth";
 
 const CreateOrderForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
+    order_number: "",
     invoice_number: "",
     product_description: "",
     destination: "",
@@ -35,6 +36,7 @@ const CreateOrderForm = ({ onSuccess }) => {
       await axios.post("/orders", formData);
       onSuccess();
       setFormData({
+        order_number: "",
         invoice_number: "",
         product_description: "",
         destination: "",
@@ -64,6 +66,15 @@ const CreateOrderForm = ({ onSuccess }) => {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input
+            type="text"
+            name="order_number"
+            placeholder="Order Number (from DHL)"
+            value={formData.order_number}
+            onChange={handleChange}
+            required
+            className="p-2 border rounded"
+          />
           <input
             type="text"
             name="invoice_number"
