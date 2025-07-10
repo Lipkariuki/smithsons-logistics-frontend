@@ -36,7 +36,7 @@ const AdminOrdersPage = () => {
   };
 
   const fetchVehicles = () => {
-    axiosAuth.get("/vehicles")
+    axiosAuth.get("/vehicles/")
       .then((res) => setAvailableVehicles(res.data))
       .catch((err) => console.error("Fetch vehicles failed:", err));
   };
@@ -62,7 +62,7 @@ const AdminOrdersPage = () => {
         total_amount: createForm.total_amount ? parseFloat(createForm.total_amount) : 0,
       };
 
-      await axiosAuth.post("/orders", payload);
+      await axiosAuth.post("/orders/", payload);
       setCreateForm({
         order_number: "",
         invoice_number: "",
