@@ -22,7 +22,7 @@ const AdminDashboard = () => {
   };
 
   const fetchVehicles = () => {
-    axiosAuth.get("/vehicles")
+    axiosAuth.get("/vehicles/")
       .then((res) => setAvailableVehicles(res.data))
       .catch((err) => console.error("Fetch vehicles failed:", err));
   };
