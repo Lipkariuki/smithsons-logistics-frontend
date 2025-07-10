@@ -54,7 +54,15 @@ const AdminOrdersPage = () => {
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axiosAuth.post("/orders", createForm);
+      const payload = {
+        ...createForm,
+        date: createForm.date || null,
+        cases: createForm.cases ? parseInt(createForm.cases) : 0,
+        price_per_case: createForm.price_per_case ? parseFloat(createForm.price_per_case) : 0,
+        total_amount: createForm.total_amount ? parseFloat(createForm.total_amount) : 0,
+      };
+
+      await axiosAuth.post("/orders", payload);
       setCreateForm({
         order_number: "",
         invoice_number: "",
@@ -72,7 +80,7 @@ const AdminOrdersPage = () => {
       setShowCreateForm(false);
       fetchOrders();
     } catch (err) {
-      console.error("Create order failed:", err.response?.data);
+      console.error("Create order failed:", err.response?.data || err.message);
     }
   };
 
@@ -152,19 +160,7 @@ const AdminOrdersPage = () => {
           onSubmit={handleCreateSubmit}
           className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded border"
         >
-          {[
-            "order_number",
-            "invoice_number",
-            "purchase_order_number",
-            "dispatch_note_number",
-            "date",
-            "product_type",
-            "product_description",
-            "destination",
-            "cases",
-            "price_per_case",
-            "total_amount",
-          ].map((field) => (
+          {["order_number", "invoice_number", "purchase_order_number", "dispatch_note_number", "date", "product_type", "product_description", "destination", "cases", "price_per_case", "total_amount"].map((field) => (
             <input
               key={field}
               name={field}
