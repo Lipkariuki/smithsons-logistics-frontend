@@ -84,14 +84,22 @@ const AdminOrdersPage = () => {
       if (editFormData.vehicle_id) {
         await axiosAuth.put(`/orders/${orderId}/assign-vehicle?vehicle_id=${editFormData.vehicle_id}`);
       }
-      if (editFormData.expense_amount && editFormData.trip_id) {
+      if (
+        editFormData.expense_amount &&
+        editFormData.trip_id !== null &&
+        editFormData.trip_id !== undefined
+      ) {
         await axiosAuth.post("/expenses/", {
           trip_id: editFormData.trip_id,
           amount: parseFloat(editFormData.expense_amount),
           description: editFormData.expense_description,
         });
       }
-      if (editFormData.commission_rate && editFormData.trip_id) {
+      if (
+        editFormData.commission_rate &&
+        editFormData.trip_id !== null &&
+        editFormData.trip_id !== undefined
+      ) {
         await axiosAuth.put(
           `/commissions/${editFormData.trip_id}`,
           null,
@@ -164,17 +172,15 @@ const AdminOrdersPage = () => {
               placeholder={field.replace(/_/g, " ").toUpperCase()}
               value={createForm[field]}
               onChange={handleCreateChange}
-              required={["order_number", "invoice_number", "destination", "total_amount"].includes(field)}
+              required={field === "order_number"}
               className="p-2 border rounded"
             />
           ))}
 
-          {/* Truck plate dropdown from vehicles */}
           <select
             name="truck_plate"
             value={createForm.truck_plate}
             onChange={handleCreateChange}
-            required
             className="p-2 border rounded"
           >
             <option value="">Select Truck</option>
@@ -248,7 +254,7 @@ const AdminOrdersPage = () => {
                         ))}
                       </select>
                     ) : (
-                      <span>{order.truck_plate}</span>
+                      <span>{order.truck_plate || "Unassigned"}</span>
                     )}
                   </td>
                   <td className="px-4 py-2">
