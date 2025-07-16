@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import {
-  LayoutDashboard,
+  Home,
   FileText,
   Truck,
   Wallet,
@@ -10,6 +10,7 @@ import {
   LogOut,
   User,
   ChevronDown,
+  LayoutDashboard
 } from "lucide-react";
 
 const SidebarLayout = () => {
@@ -30,7 +31,7 @@ const SidebarLayout = () => {
         <div>
           <h2 className="text-lg font-semibold text-purple-700 mb-4">Main Menu</h2>
           <nav className="space-y-2">
-            {/* Home link at top */}
+            {/* Home link at top with house icon */}
             <NavLink
               to="/admin/dashboard"
               className={({ isActive }) =>
@@ -39,7 +40,7 @@ const SidebarLayout = () => {
                 }`
               }
             >
-              <LayoutDashboard size={18} />
+              <Home size={18} />
               Home
             </NavLink>
 
