@@ -10,7 +10,6 @@ import {
   LogOut,
   User,
   ChevronDown,
-  Briefcase
 } from "lucide-react";
 
 const SidebarLayout = () => {
@@ -31,6 +30,19 @@ const SidebarLayout = () => {
         <div>
           <h2 className="text-lg font-semibold text-purple-700 mb-4">Main Menu</h2>
           <nav className="space-y-2">
+            {/* Home link at top */}
+            <NavLink
+              to="/admin/dashboard"
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  isActive ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-purple-50"
+                }`
+              }
+            >
+              <LayoutDashboard size={18} />
+              Home
+            </NavLink>
+
             {menuItems.map((item) => (
               <NavLink
                 key={item.name}
