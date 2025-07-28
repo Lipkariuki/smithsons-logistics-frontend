@@ -97,21 +97,23 @@ const AdminDashboard = () => {
         <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
           <h2 className="text-xl font-semibold mb-4">Orders</h2>
           <table className="min-w-full table-auto text-sm">
-            <thead>
-              <tr className="text-left border-b bg-gray-100 text-gray-600">
-                <th className="py-2 px-4">Order ID</th>
-                <th className="py-2 px-4">Invoice</th>
-                <th className="py-2 px-4">Product</th>
-                <th className="py-2 px-4">Destination</th>
-                <th className="py-2 px-4">Driver</th>
-                <th className="py-2 px-4">Vehicle</th>
-                <th className="py-2 px-4">Total Paid</th>
-                <th className="py-2 px-4">Expenses</th>
-                <th className="py-2 px-4">Commission</th>
-                <th className="py-2 px-4">Revenue</th>
-                <th className="py-2 px-4">Actions</th>
-              </tr>
-            </thead>
+          <thead>
+          <tr className="text-left border-b bg-gray-100 text-gray-600">
+            <th className="py-2 px-4">Order ID</th>
+            <th className="py-2 px-4">DHL Order #</th>
+            <th className="py-2 px-4">Invoice</th>
+            <th className="py-2 px-4">Product</th>
+            <th className="py-2 px-4">Destination</th>
+            <th className="py-2 px-4">Driver</th>
+            <th className="py-2 px-4">Vehicle</th>
+            <th className="py-2 px-4">Total Paid</th>
+            <th className="py-2 px-4">Expenses</th>
+            <th className="py-2 px-4">Commission</th>
+            <th className="py-2 px-4">Revenue</th>
+            <th className="py-2 px-4">Actions</th>
+          </tr>
+        </thead>
+
             <tbody>
               {orders.map((order) => {
                 const revenue = order.total_amount - order.expenses - order.commission;
@@ -120,6 +122,8 @@ const AdminDashboard = () => {
                 return (
                   <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
                     <td className="py-2 px-4">{order.id}</td>
+                    <td className="py-2 px-4 font-bold text-purple-700">{order.order_number}</td>
+
                     <td className="py-2 px-4">{order.invoice_number}</td>
                     <td className="py-2 px-4">
                       {isEditing ? (
