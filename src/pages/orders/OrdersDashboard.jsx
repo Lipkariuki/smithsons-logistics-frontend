@@ -10,6 +10,8 @@ const AdminOrdersPage = () => {
   const [editRowId, setEditRowId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [createForm, setCreateForm] = useState({
     order_number: "",
     invoice_number: "",
@@ -21,8 +23,7 @@ const AdminOrdersPage = () => {
     truck_plate: "",
     destination: "",
     cases: "",
-    price_per_case: "",
-    total_amount: "",
+    price_per_case: ""
   });
 
   const fetchOrders = () => {
@@ -66,13 +67,14 @@ const AdminOrdersPage = () => {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+    setError("");
     try {
       const payload = {
         ...createForm,
         date: createForm.date || null,
         cases: createForm.cases ? parseInt(createForm.cases) : 0,
-        price_per_case: createForm.price_per_case ? parseFloat(createForm.price_per_case) : 0,
-        total_amount: createForm.total_amount ? parseFloat(createForm.total_amount) : 0,
+        price_per_case: createForm.price_per_case ? parseFloat(createForm.price_per_case) : 0
       };
 
       await axiosAuth.post("/orders/", payload);
@@ -87,13 +89,14 @@ const AdminOrdersPage = () => {
         truck_plate: "",
         destination: "",
         cases: "",
-        price_per_case: "",
-        total_amount: "",
+        price_per_case: ""
       });
       setShowCreateForm(false);
       fetchOrders();
+      setMessage("Order created successfully.");
     } catch (err) {
-      console.error("Create order failed:", err.response?.data || err.message);
+      const reason = err.response?.data?.detail || err.message;
+      setError(`Failed to create order: ${reason}`);
     }
   };
 
@@ -109,14 +112,14 @@ const AdminOrdersPage = () => {
         await axiosAuth.post("/expenses/", {
           trip_id: editFormData.trip_id,
           amount: parseFloat(editFormData.expense_amount),
-          description: editFormData.expense_description,
+          description: editFormData.expense_description
         });
       }
       if (editFormData.commission_rate && editFormData.trip_id) {
         await axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
           params: {
-            rate_percent: parseFloat(editFormData.commission_rate),
-          },
+            rate_percent: parseFloat(editFormData.commission_rate)
+          }
         });
       }
       setEditRowId(null);
@@ -137,7 +140,7 @@ const AdminOrdersPage = () => {
       expense_amount: "",
       expense_description: "",
       commission_rate: "",
-      trip_id: order.trip_id,
+      trip_id: order.trip_id
     });
   };
 
@@ -149,6 +152,8 @@ const AdminOrdersPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-2xl font-bold text-purple-700 mb-4">Admin Orders</h1>
+      {message && <div className="text-green-600 mb-2">{message}</div>}
+      {error && <div className="text-red-600 mb-2">{error}</div>}
 
       <button
         onClick={() => setShowCreateForm(!showCreateForm)}
@@ -178,14 +183,12 @@ const AdminOrdersPage = () => {
           </select>
           <input name="cases" placeholder="CASES" value={createForm.cases} onChange={handleCreateChange} className="p-2 border rounded" />
           <input name="price_per_case" placeholder="PRICE PER CASE" value={createForm.price_per_case} onChange={handleCreateChange} className="p-2 border rounded" />
-          <input name="total_amount" placeholder="TOTAL AMOUNT" value={createForm.total_amount} onChange={handleCreateChange} className="p-2 border rounded" />
           <select name="truck_plate" value={createForm.truck_plate} onChange={handleCreateChange} className="p-2 border rounded">
             <option value="">Select Truck</option>
             {availableVehicles.map((v) => (
               <option key={v.id} value={v.plate_number}>{v.plate_number}</option>
             ))}
           </select>
-
           <button type="submit" className="col-span-1 md:col-span-2 bg-green-600 text-white p-2 rounded hover:bg-green-700">
             Submit Order
           </button>
@@ -194,7 +197,7 @@ const AdminOrdersPage = () => {
 
       <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
         <table className="min-w-full table-auto text-sm">
-        <thead>
+          <thead>
             <tr className="text-left border-b bg-gray-100 text-gray-600">
               <th className="py-2 px-4">Order ID</th>
               <th className="py-2 px-4">DHL Order #</th>
@@ -203,24 +206,19 @@ const AdminOrdersPage = () => {
               <th className="py-2 px-4">Destination</th>
               <th className="py-2 px-4">Driver</th>
               <th className="py-2 px-4">Vehicle</th>
-              <th className="py-2 px-4">Total Paid</th>
               <th className="py-2 px-4">Expenses</th>
               <th className="py-2 px-4">Commission</th>
-              <th className="py-2 px-4">Revenue</th>
               <th className="py-2 px-4">Actions</th>
             </tr>
-        </thead>
-
+          </thead>
           <tbody>
             {orders.map((order) => {
-              const revenue = order.total_amount - order.expenses - order.commission;
               const isEditing = editRowId === order.id;
 
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
                   <td className="py-2 px-4">{order.id}</td>
                   <td className="py-2 px-4 font-bold text-purple-700">{order.order_number}</td>
-
                   <td className="py-2 px-4">{order.invoice_number}</td>
                   <td className="py-2 px-4">{order.product_description}</td>
                   <td className="py-2 px-4">{order.destination}</td>
@@ -258,7 +256,6 @@ const AdminOrdersPage = () => {
                       order.truck_plate ?? <span className="text-red-600">Unassigned</span>
                     )}
                   </td>
-                  <td className="py-2 px-4">{order.total_amount.toLocaleString()}</td>
                   <td className="py-2 px-4">
                     {isEditing ? (
                       <div className="flex flex-col gap-1 md:flex-row md:items-center">
@@ -294,7 +291,6 @@ const AdminOrdersPage = () => {
                       `${order.commission.toLocaleString()} KES`
                     )}
                   </td>
-                  <td className="py-2 px-4 text-green-600 font-semibold">{revenue.toLocaleString()}</td>
                   <td className="py-2 px-4 space-x-2">
                     {isEditing ? (
                       <>
