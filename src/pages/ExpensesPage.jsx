@@ -206,7 +206,7 @@ const ExpensesPage = () => {
           <table className="min-w-full table-auto text-sm">
             <thead className="bg-gray-100 text-left text-gray-600">
               <tr>
-                <th className="py-2 px-4">Trip ID</th>
+                <th className="py-2 px-4">DHL Order #</th>
                 <th className="py-2 px-4">Vehicle Plate</th>
                 <th className="py-2 px-4">Destination</th>
                 <th className="py-2 px-4">Amount (KES)</th>
@@ -217,7 +217,7 @@ const ExpensesPage = () => {
             <tbody>
               {expenses.map((exp) => (
                 <tr key={exp.id} className="border-t text-gray-700">
-                  <td className="py-2 px-4">{exp.trip_id}</td>
+                  <td className="py-2 px-4">{exp.order_number || "-"}</td>
                   <td className="py-2 px-4">{exp.vehicle_plate || "-"}</td>
                   <td className="py-2 px-4">{exp.destination || "-"}</td>
                   <td className="py-2 px-4">{exp.amount.toLocaleString()}</td>
