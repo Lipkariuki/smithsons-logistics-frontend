@@ -12,6 +12,7 @@ import {
   ChevronDown,
   LayoutDashboard
 } from "lucide-react";
+import { Calculator as CalculatorIcon } from "lucide-react";
 
 const SidebarLayout = () => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -22,81 +23,94 @@ const SidebarLayout = () => {
     { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
     { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
     { name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" },
+    { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-100 text-[15px]">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r p-4 shadow-sm flex flex-col justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-purple-700 mb-4">Main Menu</h2>
-          <nav className="space-y-2">
-            {/* Home link at top with house icon */}
+      <aside className="w-80 bg-white border-r p-5 shadow-sm flex flex-col sticky top-0 h-screen overflow-y-auto">
+        {/* Brand */}
+        <div className="mb-5">
+          <div className="flex items-center gap-2">
+            <Truck size={20} className="text-purple-700" />
+            <h1 className="text-xl font-semibold text-purple-700">Smithsons Console</h1>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="space-y-1">
+          {/* Home link */}
+          <NavLink
+            to="/admin/dashboard"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-lg text-base transition ${
+                isActive ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-purple-50"
+              }`
+            }
+          >
+            <Home size={18} />
+            Home
+          </NavLink>
+
+          {menuItems.map((item) => (
             <NavLink
-              to="/admin/dashboard"
+              key={item.name}
+              to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-base transition ${
                   isActive ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-purple-50"
                 }`
               }
             >
-              <Home size={18} />
-              Home
+              {item.icon}
+              {item.name}
             </NavLink>
+          ))}
+        </nav>
 
-            {menuItems.map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                    isActive ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-purple-50"
-                  }`
-                }
-              >
-                {item.icon}
-                {item.name}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
-        {/* Settings + Profile Dropdown */}
-        <div className="pt-4 border-t mt-4 relative">
-          <div
-            onClick={() => setShowDropdown((prev) => !prev)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-purple-50 cursor-pointer"
-          >
-            <User size={18} />
-            Admin
-            <ChevronDown size={14} />
-          </div>
-
-          {showDropdown && (
-            <div className="absolute bottom-12 left-0 w-full bg-white shadow-md rounded-md overflow-hidden z-10">
-              <NavLink
-                to="/admin/settings"
-                className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-purple-50 text-gray-700"
-              >
-                <Settings size={16} /> Settings
-              </NavLink>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  window.location.href = "/login";
-                }}
-                className="flex items-center w-full gap-2 px-4 py-2 text-sm hover:bg-purple-50 text-gray-700"
-              >
-                <LogOut size={16} /> Logout
-              </button>
+        {/* User actions */}
+        <div className="mt-auto pt-4 border-t">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700">
+              <User size={16} />
             </div>
-          )}
+            <div>
+              <p className="text-sm font-medium text-gray-800">Admin</p>
+              <p className="text-xs text-gray-500">Logged in</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2">
+            <NavLink
+              to="/admin/settings"
+              className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:bg-purple-50 text-gray-700"
+            >
+              <Settings size={16} /> Settings
+            </NavLink>
+            <button
+              onClick={() => {
+                localStorage.removeItem("token");
+                window.location.href = "/login";
+              }}
+              className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:bg-red-50 text-red-600"
+            >
+              <LogOut size={16} /> Logout
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 bg-white p-8 rounded-tl-3xl shadow-inner">
-        <Outlet />
+      <main className="flex-1 p-8">
+        <div className="bg-white border rounded-xl shadow-sm mb-6 px-5 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-gray-700">
+            <LayoutDashboard size={18} />
+            <span className="font-medium">Admin Dashboard</span>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
