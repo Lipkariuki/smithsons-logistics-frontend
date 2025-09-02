@@ -53,6 +53,7 @@ const AdminTripsPage = () => {
           <thead className="bg-purple-50 text-xs text-gray-600 uppercase">
             <tr>
               <th className="px-4 py-3">Trip ID</th>
+              <th className="px-4 py-3">Order #</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Reimbursement</th>
               <th className="px-4 py-3">Dispatch Note</th>
@@ -67,6 +68,7 @@ const AdminTripsPage = () => {
             {trips.map((trip) => (
               <tr key={trip.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900">{trip.id}</td>
+                <td className="px-4 py-3">{trip.order_number || '-'}</td>
                 <td className="px-4 py-3">{trip.status}</td>
                 <td className="px-4 py-3">{trip.reimbursement_status}</td>
                 <td className="px-4 py-3">
