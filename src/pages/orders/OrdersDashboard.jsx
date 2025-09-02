@@ -14,8 +14,10 @@ const AdminOrdersPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [vehicleFilter, setVehicleFilter] = useState("");
+  const [quickRange, setQuickRange] = useState("");
   const [createForm, setCreateForm] = useState({
     order_number: "",
     invoice_number: "",
@@ -157,32 +159,96 @@ const AdminOrdersPage = () => {
     setEditFormData({});
   };
 
-  const applyFilters = (selectedDate, selectedVehicle) => {
+  const applyFilters = (selStartDate = startDate, selEndDate = endDate, selVehicle = vehicleFilter) => {
     const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
     let data = [...orders];
-    if (selectedDate) {
-      data = data.filter((order) => fmt(order.date) === selectedDate);
+    // Date range filtering (inclusive)
+    if (selStartDate) {
+      data = data.filter((order) => {
+        const od = fmt(order.date);
+        return od >= selStartDate;
+      });
     }
-    if (selectedVehicle) {
+    if (selEndDate) {
+      data = data.filter((order) => {
+        const od = fmt(order.date);
+        return od <= selEndDate;
+      });
+    }
+    // Vehicle filter
+    if (selVehicle) {
       data = data.filter((order) => {
         // Prefer vehicle_id when present; fallback to truck_plate
-        if (order.vehicle_id) return String(order.vehicle_id) === String(selectedVehicle);
-        return order.truck_plate === selectedVehicle;
+        if (order.vehicle_id) return String(order.vehicle_id) === String(selVehicle);
+        return order.truck_plate === selVehicle;
       });
     }
     setFilteredOrders(data);
   };
 
-  const handleDateFilterChange = (e) => {
-    const selectedDate = e.target.value;
-    setDateFilter(selectedDate);
-    applyFilters(selectedDate, vehicleFilter);
+  const handleStartDateChange = (e) => {
+    const v = e.target.value;
+    setStartDate(v);
+    applyFilters(v, endDate, vehicleFilter);
+  };
+
+  const handleEndDateChange = (e) => {
+    const v = e.target.value;
+    setEndDate(v);
+    applyFilters(startDate, v, vehicleFilter);
   };
 
   const handleVehicleFilterChange = (e) => {
     const selectedVehicle = e.target.value;
     setVehicleFilter(selectedVehicle);
-    applyFilters(dateFilter, selectedVehicle);
+    applyFilters(startDate, endDate, selectedVehicle);
+  };
+
+  const handleQuickRangeChange = (e) => {
+    const value = e.target.value;
+    setQuickRange(value);
+    const today = new Date();
+    const toISO = (d) => d.toISOString().slice(0, 10);
+    let s = "";
+    let en = "";
+    if (value === "today") {
+      const d = new Date(today);
+      s = toISO(d);
+      en = toISO(d);
+    } else if (value === "last7") {
+      const d = new Date(today);
+      const sDate = new Date(d);
+      sDate.setDate(d.getDate() - 6);
+      s = toISO(sDate);
+      en = toISO(d);
+    } else if (value === "thisMonth") {
+      const d = new Date(today);
+      const first = new Date(d.getFullYear(), d.getMonth(), 1);
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      s = toISO(first);
+      en = toISO(last);
+    } else if (value === "lastMonth") {
+      const d = new Date(today);
+      const first = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+      const last = new Date(d.getFullYear(), d.getMonth(), 0);
+      s = toISO(first);
+      en = toISO(last);
+    } else {
+      // all
+      s = "";
+      en = "";
+    }
+    setStartDate(s);
+    setEndDate(en);
+    applyFilters(s, en, vehicleFilter);
+  };
+
+  const handleResetFilters = () => {
+    setStartDate("");
+    setEndDate("");
+    setVehicleFilter("");
+    setQuickRange("");
+    setFilteredOrders(orders);
   };
 
   return (
@@ -303,12 +369,31 @@ const AdminOrdersPage = () => {
       )}
 
       <div className="mb-4 flex flex-wrap gap-3 items-center">
+        <select
+          value={quickRange}
+          onChange={handleQuickRangeChange}
+          className="p-2 border rounded"
+        >
+          <option value="">All dates</option>
+          <option value="today">Today</option>
+          <option value="last7">Last 7 days</option>
+          <option value="thisMonth">This month</option>
+          <option value="lastMonth">Last month</option>
+        </select>
         <input
           type="date"
-          value={dateFilter}
-          onChange={handleDateFilterChange}
+          value={startDate}
+          onChange={handleStartDateChange}
           className="p-2 border rounded"
-          placeholder="Filter by Date"
+          placeholder="Start date"
+        />
+        <span className="text-gray-500">to</span>
+        <input
+          type="date"
+          value={endDate}
+          onChange={handleEndDateChange}
+          className="p-2 border rounded"
+          placeholder="End date"
         />
         <select
           value={vehicleFilter}
@@ -320,6 +405,13 @@ const AdminOrdersPage = () => {
             <option key={v.id} value={v.id}>{v.plate_number}</option>
           ))}
         </select>
+        <button
+          onClick={handleResetFilters}
+          className="bg-gray-100 border px-3 py-2 rounded hover:bg-gray-200"
+          type="button"
+        >
+          Reset
+        </button>
         <CSVLink
           data={filteredOrders.map((o) => ({
             id: o.id,
