@@ -18,6 +18,9 @@ const RevenueDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [filterDraft, setFilterDraft] = useState({ month: "", product: "", owner: "", vehicle: "" });
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [quickRange, setQuickRange] = useState("");
   const [owners, setOwners] = useState([]);
   const [vehicles, setVehicles] = useState([]);
 
@@ -35,10 +38,18 @@ const RevenueDashboard = () => {
         ? res.data.orders
         : [];
 
+      const fmt = (d) => (d ? new Date(d).toISOString().slice(0,10) : "");
+
       if (filterDraft.product) {
         data = data.filter((o) =>
           o.product_description?.toLowerCase().includes(filterDraft.product.toLowerCase())
         );
+      }
+      if (startDate) {
+        data = data.filter((o) => fmt(o.date) >= startDate);
+      }
+      if (endDate) {
+        data = data.filter((o) => fmt(o.date) <= endDate);
       }
       if (filterDraft.owner) {
         data = data.filter((o) => String(o.owner_id) === String(filterDraft.owner));
@@ -63,6 +74,9 @@ const RevenueDashboard = () => {
   const resetFilters = async () => {
     try {
       setFilterDraft({ month: "", product: "", owner: "", vehicle: "" });
+      setStartDate("");
+      setEndDate("");
+      setQuickRange("");
       const res = await axios.get("/admin/orders");
       const data = Array.isArray(res.data)
         ? res.data
@@ -131,6 +145,51 @@ const RevenueDashboard = () => {
       </section>
 
       <div className="flex flex-wrap gap-4 items-center mb-4">
+        <select
+          value={quickRange}
+          onChange={(e) => {
+            const v = e.target.value;
+            setQuickRange(v);
+            const today = new Date();
+            const toISO = (d) => d.toISOString().slice(0,10);
+            if (v === "today") {
+              const d = new Date(today);
+              setStartDate(toISO(d));
+              setEndDate(toISO(d));
+            } else if (v === "last7") {
+              const d = new Date(today);
+              const s = new Date(d);
+              s.setDate(d.getDate() - 6);
+              setStartDate(toISO(s));
+              setEndDate(toISO(d));
+            } else if (v === "thisMonth") {
+              const d = new Date(today);
+              const first = new Date(d.getFullYear(), d.getMonth(), 1);
+              const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+              setStartDate(toISO(first));
+              setEndDate(toISO(last));
+            } else if (v === "lastMonth") {
+              const d = new Date(today);
+              const first = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+              const last = new Date(d.getFullYear(), d.getMonth(), 0);
+              setStartDate(toISO(first));
+              setEndDate(toISO(last));
+            } else {
+              setStartDate("");
+              setEndDate("");
+            }
+          }}
+          className="border p-2 rounded"
+        >
+          <option value="">All dates</option>
+          <option value="today">Today</option>
+          <option value="last7">Last 7 days</option>
+          <option value="thisMonth">This month</option>
+          <option value="lastMonth">Last month</option>
+        </select>
+        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 rounded" />
+        <span className="text-gray-500">to</span>
+        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 rounded" />
         <select value={filterDraft.month} onChange={(e) => setFilterDraft({ ...filterDraft, month: e.target.value })} className="border p-2 rounded">
           <option value="">All Months</option>
           {[...Array(12)].map((_, i) => (
@@ -164,6 +223,12 @@ const RevenueDashboard = () => {
           Export CSV
         </CSVLink>
       </div>
+
+      {filterDraft.owner && (
+        <div className="bg-purple-50 border border-purple-200 text-purple-800 rounded-lg px-4 py-3 mb-4 text-sm">
+          Showing results for owner ID {filterDraft.owner}: {safeArray.length} order(s). Net revenue {totalRevenue.toLocaleString()} KES.
+        </div>
+      )}
 
       <section className="bg-white shadow rounded-lg p-6 overflow-x-auto">
         <h2 className="text-xl font-semibold mb-4 text-purple-700">Order Revenue Breakdown</h2>
