@@ -91,6 +91,10 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-bold text-gray-800">Orders Dashboard</h3>
             <p className="text-sm text-gray-600">Browse all raw orders, truck assignments, and trip statuses.</p>
           </Link>
+          <Link to="/admin/fleet" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
+            <h3 className="text-lg font-bold text-gray-800">Fleet</h3>
+            <p className="text-sm text-gray-600">Owners and vehicles with search, filters, and export.</p>
+          </Link>
         </section>
 
         {/* Orders Table */}
