@@ -303,12 +303,14 @@ const AdminOrdersPage = () => {
             name="date"
             value={createForm.date}
             onChange={handleCreateChange}
+            required
             className="p-2 border rounded"
           />
           <select
             name="product_type"
             value={createForm.product_type}
             onChange={handleCreateChange}
+            required
             className="p-2 border rounded"
           >
             <option value="">Select Product Type</option>
@@ -327,6 +329,7 @@ const AdminOrdersPage = () => {
             name="destination"
             value={createForm.destination}
             onChange={handleCreateChange}
+            required
             className="p-2 border rounded"
           >
             <option value="">Select Destination</option>
@@ -352,9 +355,10 @@ const AdminOrdersPage = () => {
             name="truck_plate"
             value={createForm.truck_plate}
             onChange={handleCreateChange}
+            required
             className="p-2 border rounded"
           >
-            <option value="">Select Truck</option>
+            <option value="">Select Truck/Van</option>
             {availableVehicles.map((v) => (
               <option key={v.id} value={v.plate_number}>{v.plate_number}</option>
             ))}
