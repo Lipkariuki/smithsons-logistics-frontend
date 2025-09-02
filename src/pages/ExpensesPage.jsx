@@ -4,7 +4,9 @@ import axios from "../utils/axiosAuth"; // ✅ use the shared axios instance
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [mode, setMode] = useState("order"); // 'order' or 'trip'
   const [formData, setFormData] = useState({
+    order_number: "",
     trip_id: "",
     amount: "",
     description: "",
@@ -20,12 +22,17 @@ const ExpensesPage = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("/expenses/", {
-        trip_id: parseInt(formData.trip_id),
+      const payload = {
         amount: parseFloat(formData.amount),
-        description: formData.description,
-      });
-      setFormData({ trip_id: "", amount: "", description: "" });
+        description: formData.description || undefined,
+      };
+      if (mode === "order") {
+        payload.order_number = formData.order_number?.trim();
+      } else {
+        payload.trip_id = formData.trip_id ? parseInt(formData.trip_id) : undefined;
+      }
+      await axios.post("/expenses/", payload);
+      setFormData({ order_number: "", trip_id: "", amount: "", description: "" });
       setShowForm(false);
       fetchExpenses();
     } catch (err) {
@@ -54,16 +61,41 @@ const ExpensesPage = () => {
           onSubmit={handleFormSubmit}
           className="bg-white rounded-lg shadow p-4 mb-6 space-y-4"
         >
-          <div>
-            <label className="block text-sm text-gray-600">Trip ID</label>
-            <input
-              type="number"
-              value={formData.trip_id}
-              onChange={(e) => setFormData({ ...formData, trip_id: e.target.value })}
-              required
-              className="w-full border rounded px-3 py-2"
-            />
+          <div className="flex gap-4 items-center">
+            <label className="text-sm text-gray-600">Add by:</label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="radio" name="mode" value="order" checked={mode === "order"} onChange={() => setMode("order")} />
+              DHL Order #
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="radio" name="mode" value="trip" checked={mode === "trip"} onChange={() => setMode("trip")} />
+              Trip ID
+            </label>
           </div>
+          {mode === "order" ? (
+            <div>
+              <label className="block text-sm text-gray-600">DHL Order Number</label>
+              <input
+                type="text"
+                value={formData.order_number}
+                onChange={(e) => setFormData({ ...formData, order_number: e.target.value })}
+                required
+                className="w-full border rounded px-3 py-2"
+                placeholder="e.g. ord-2025-102"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm text-gray-600">Trip ID</label>
+              <input
+                type="number"
+                value={formData.trip_id}
+                onChange={(e) => setFormData({ ...formData, trip_id: e.target.value })}
+                required
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm text-gray-600">Amount (KES)</label>
             <input
@@ -80,8 +112,8 @@ const ExpensesPage = () => {
               type="text"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              required
               className="w-full border rounded px-3 py-2"
+              placeholder="optional"
             />
           </div>
           <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
