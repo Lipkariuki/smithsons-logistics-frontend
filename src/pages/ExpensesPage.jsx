@@ -11,12 +11,24 @@ const ExpensesPage = () => {
     amount: "",
     description: "",
   });
+  const [orderOptions, setOrderOptions] = useState([]);
 
   const fetchExpenses = () => {
     axios
       .get("/expenses/")
       .then((res) => setExpenses(res.data))
       .catch((err) => console.error("Failed to fetch expenses:", err));
+  };
+
+  const fetchOrderOptions = async () => {
+    try {
+      const res = await axios.get("/admin/orders");
+      const data = Array.isArray(res.data) ? res.data : [];
+      setOrderOptions(data);
+    } catch (err) {
+      console.error("Failed to load order options:", err);
+      setOrderOptions([]);
+    }
   };
 
   const handleFormSubmit = async (e) => {
@@ -43,6 +55,15 @@ const ExpensesPage = () => {
   useEffect(() => {
     fetchExpenses();
   }, []);
+
+  useEffect(() => {
+    if (showForm && mode === "order") fetchOrderOptions();
+  }, [showForm, mode]);
+
+  const normalizeOrderNumber = (input) => {
+    if (!input) return "";
+    return input.trim(); // gentle normalization; keep original pattern
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -77,12 +98,21 @@ const ExpensesPage = () => {
               <label className="block text-sm text-gray-600">DHL Order Number</label>
               <input
                 type="text"
+                list="orderNumbers"
                 value={formData.order_number}
-                onChange={(e) => setFormData({ ...formData, order_number: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, order_number: normalizeOrderNumber(e.target.value) })}
                 required
                 className="w-full border rounded px-3 py-2"
                 placeholder="e.g. ord-2025-102"
               />
+              <datalist id="orderNumbers">
+                {orderOptions.slice(0, 50).map((o) => (
+                  <option key={o.id} value={o.order_number}>
+                    {o.order_number} — {o.destination || ""} {o.invoice_number ? `(Inv ${o.invoice_number})` : ""}
+                  </option>
+                ))}
+              </datalist>
+              <p className="text-xs text-gray-500 mt-1">Type to search recent orders or paste a full reference.</p>
             </div>
           ) : (
             <div>
