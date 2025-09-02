@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
-  html { @apply text-[15px] md:text-[16px]; }
+  /* Use raw CSS for responsive root font to avoid @apply md: variant */
+  html { font-size: 15px; }
+  @media (min-width: 768px) {
+    html { font-size: 16px; }
+  }
   body { @apply text-gray-800 bg-gray-100; }
 }
