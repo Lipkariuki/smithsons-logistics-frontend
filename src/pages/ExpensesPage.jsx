@@ -12,6 +12,7 @@ const ExpensesPage = () => {
     description: "",
   });
   const [orderOptions, setOrderOptions] = useState([]);
+  const [orderQueryTimer, setOrderQueryTimer] = useState(null);
 
   const fetchExpenses = () => {
     axios
@@ -20,9 +21,12 @@ const ExpensesPage = () => {
       .catch((err) => console.error("Failed to fetch expenses:", err));
   };
 
-  const fetchOrderOptions = async () => {
+  const fetchOrderOptions = async (q) => {
     try {
-      const res = await axios.get("/admin/orders");
+      const params = new URLSearchParams();
+      if (q) params.set("search", q);
+      params.set("limit", "50");
+      const res = await axios.get(`/admin/orders?${params.toString()}`);
       const data = Array.isArray(res.data) ? res.data : [];
       setOrderOptions(data);
     } catch (err) {
@@ -57,8 +61,17 @@ const ExpensesPage = () => {
   }, []);
 
   useEffect(() => {
-    if (showForm && mode === "order") fetchOrderOptions();
-  }, [showForm, mode]);
+    if (!(showForm && mode === "order")) return;
+    const q = formData.order_number?.trim();
+    if (!q || q.length < 2) {
+      setOrderOptions([]);
+      return;
+    }
+    if (orderQueryTimer) clearTimeout(orderQueryTimer);
+    const t = setTimeout(() => fetchOrderOptions(q), 250);
+    setOrderQueryTimer(t);
+    return () => clearTimeout(t);
+  }, [showForm, mode, formData.order_number]);
 
   const normalizeOrderNumber = (input) => {
     if (!input) return "";
