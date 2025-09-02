@@ -13,6 +13,7 @@ const ExpensesPage = () => {
   });
   const [orderOptions, setOrderOptions] = useState([]);
   const [orderQueryTimer, setOrderQueryTimer] = useState(null);
+  const [searching, setSearching] = useState(false);
 
   const fetchExpenses = () => {
     axios
@@ -23,6 +24,7 @@ const ExpensesPage = () => {
 
   const fetchOrderOptions = async (q) => {
     try {
+      setSearching(true);
       const params = new URLSearchParams();
       if (q) params.set("search", q);
       params.set("limit", "50");
@@ -32,6 +34,8 @@ const ExpensesPage = () => {
     } catch (err) {
       console.error("Failed to load order options:", err);
       setOrderOptions([]);
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -65,6 +69,7 @@ const ExpensesPage = () => {
     const q = formData.order_number?.trim();
     if (!q || q.length < 2) {
       setOrderOptions([]);
+      setSearching(false);
       return;
     }
     if (orderQueryTimer) clearTimeout(orderQueryTimer);
@@ -109,15 +114,23 @@ const ExpensesPage = () => {
           {mode === "order" ? (
             <div>
               <label className="block text-sm text-gray-600">DHL Order Number</label>
-              <input
-                type="text"
-                list="orderNumbers"
-                value={formData.order_number}
-                onChange={(e) => setFormData({ ...formData, order_number: normalizeOrderNumber(e.target.value) })}
-                required
-                className="w-full border rounded px-3 py-2"
-                placeholder="e.g. ord-2025-102"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  list="orderNumbers"
+                  value={formData.order_number}
+                  onChange={(e) => setFormData({ ...formData, order_number: normalizeOrderNumber(e.target.value) })}
+                  required
+                  className="w-full border rounded px-3 py-2 pr-9"
+                  placeholder="e.g. ord-2025-102"
+                />
+                {searching && (
+                  <svg className="animate-spin h-4 w-4 text-gray-500 absolute right-3 top-3" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                )}
+              </div>
               <datalist id="orderNumbers">
                 {orderOptions.slice(0, 50).map((o) => (
                   <option key={o.id} value={o.order_number}>
