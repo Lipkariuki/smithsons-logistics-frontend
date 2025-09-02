@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import {
-  Home,
-  FileText,
-  Truck,
-  Wallet,
-  BarChart2,
-  Settings,
-  LogOut,
-  User,
-  ChevronDown,
-  LayoutDashboard
-} from "lucide-react";
+  import {
+    Home,
+    FileText,
+    Truck,
+    Wallet,
+    BarChart2,
+    Settings,
+    LogOut,
+    User,
+    ChevronDown,
+    LayoutDashboard,
+    Users
+  } from "lucide-react";
 import { Calculator as CalculatorIcon } from "lucide-react";
 
 const SidebarLayout = () => {
@@ -21,6 +22,7 @@ const SidebarLayout = () => {
     { name: "Revenue", icon: <Wallet size={18} />, path: "/admin/finance" },
     { name: "Orders", icon: <FileText size={18} />, path: "/admin/orders" },
     { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
+    { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
     { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
     { name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" },
     { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },

@@ -8,6 +8,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import OrdersDashboard from "./pages/orders/OrdersDashboard";
 import OwnerDashboard from "./pages/partners/OwnerDashboard";
 import AdminTripsPage from "./pages/admin/AdminTripsPage";
+import AdminFleetPage from "./pages/admin/AdminFleetPage";
 
 import DriverHomePage from "./pages/driver/DriverHomePage";
 import DriverTripsPage from "./pages/driver/DriverTripsPage";
@@ -18,6 +19,7 @@ import ReportsPage from "./pages/ReportsPage";
 import RevenueDashboard from "./pages/revenue/RevenueDashboard";
 import AdminEarningsDashboard from "./pages/AdminEarnings";
 import PartnerOrdersDashboard from "./pages/partners/PartnerOrdersDashboard";
+import CalculatorPage from "./pages/CalculatorPage";
 
 const App = () => {
   return (
@@ -31,10 +33,12 @@ const App = () => {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="orders" element={<OrdersDashboard />} />
         <Route path="trips" element={<AdminTripsPage />} />
+        <Route path="fleet" element={<AdminFleetPage />} />
         <Route path="expenses" element={<ExpensesPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="finance" element={<RevenueDashboard />} />
         <Route path="admin_earnings" element={<AdminEarningsDashboard />} />
+        <Route path="calculator" element={<CalculatorPage />} />
       </Route>
 
       {/* Partner/owner routes */}
