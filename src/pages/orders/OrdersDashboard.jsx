@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axiosAuth from "../../utils/axiosAuth";
+import { CSVLink } from "react-csv";
 
 const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -14,6 +15,7 @@ const AdminOrdersPage = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [vehicleFilter, setVehicleFilter] = useState("");
   const [createForm, setCreateForm] = useState({
     order_number: "",
     invoice_number: "",
@@ -155,16 +157,32 @@ const AdminOrdersPage = () => {
     setEditFormData({});
   };
 
+  const applyFilters = (selectedDate, selectedVehicle) => {
+    const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+    let data = [...orders];
+    if (selectedDate) {
+      data = data.filter((order) => fmt(order.date) === selectedDate);
+    }
+    if (selectedVehicle) {
+      data = data.filter((order) => {
+        // Prefer vehicle_id when present; fallback to truck_plate
+        if (order.vehicle_id) return String(order.vehicle_id) === String(selectedVehicle);
+        return order.truck_plate === selectedVehicle;
+      });
+    }
+    setFilteredOrders(data);
+  };
+
   const handleDateFilterChange = (e) => {
     const selectedDate = e.target.value;
     setDateFilter(selectedDate);
-    const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
-    if (selectedDate) {
-      const filtered = orders.filter((order) => fmt(order.date) === selectedDate);
-      setFilteredOrders(filtered);
-    } else {
-      setFilteredOrders(orders);
-    }
+    applyFilters(selectedDate, vehicleFilter);
+  };
+
+  const handleVehicleFilterChange = (e) => {
+    const selectedVehicle = e.target.value;
+    setVehicleFilter(selectedVehicle);
+    applyFilters(dateFilter, selectedVehicle);
   };
 
   return (
@@ -284,7 +302,7 @@ const AdminOrdersPage = () => {
         </form>
       )}
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-3 items-center">
         <input
           type="date"
           value={dateFilter}
@@ -292,6 +310,52 @@ const AdminOrdersPage = () => {
           className="p-2 border rounded"
           placeholder="Filter by Date"
         />
+        <select
+          value={vehicleFilter}
+          onChange={handleVehicleFilterChange}
+          className="p-2 border rounded"
+        >
+          <option value="">All Vehicles</option>
+          {availableVehicles.map((v) => (
+            <option key={v.id} value={v.id}>{v.plate_number}</option>
+          ))}
+        </select>
+        <CSVLink
+          data={filteredOrders.map((o) => ({
+            id: o.id,
+            date: o.date ? new Date(o.date).toISOString().slice(0,10) : "",
+            order_number: o.order_number,
+            invoice_number: o.invoice_number,
+            product_description: o.product_description,
+            destination: o.destination,
+            driver_name: o.driver_name,
+            truck_plate: o.truck_plate,
+            expenses: o.expenses,
+            commission: o.commission,
+            total_amount: o.total_amount,
+            revenue: (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0),
+            trip_id: o.trip_id,
+          }))}
+          headers={[
+            { label: "Order ID", key: "id" },
+            { label: "Date", key: "date" },
+            { label: "Order #", key: "order_number" },
+            { label: "Invoice", key: "invoice_number" },
+            { label: "Product", key: "product_description" },
+            { label: "Destination", key: "destination" },
+            { label: "Driver", key: "driver_name" },
+            { label: "Vehicle", key: "truck_plate" },
+            { label: "Expenses", key: "expenses" },
+            { label: "Commission", key: "commission" },
+            { label: "Total Amount", key: "total_amount" },
+            { label: "Revenue", key: "revenue" },
+            { label: "Trip ID", key: "trip_id" },
+          ]}
+          filename="orders_export.csv"
+          className="bg-blue-600 text-white px-3 py-2 rounded"
+        >
+          Export CSV
+        </CSVLink>
       </div>
 
       <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
