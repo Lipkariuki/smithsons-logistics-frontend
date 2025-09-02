@@ -14,6 +14,7 @@ const ExpensesPage = () => {
   const [orderOptions, setOrderOptions] = useState([]);
   const [orderQueryTimer, setOrderQueryTimer] = useState(null);
   const [searching, setSearching] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const fetchExpenses = () => {
     axios
@@ -42,14 +43,31 @@ const ExpensesPage = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
+      setSubmitError("");
+      const amountNum = Number(formData.amount);
+      if (!Number.isFinite(amountNum) || amountNum <= 0) {
+        setSubmitError("Please enter a valid amount greater than 0.");
+        return;
+      }
+
       const payload = {
-        amount: parseFloat(formData.amount),
+        amount: amountNum,
         description: formData.description || undefined,
       };
       if (mode === "order") {
-        payload.order_number = formData.order_number?.trim();
+        const on = formData.order_number?.trim();
+        if (!on) {
+          setSubmitError("Order number is required.");
+          return;
+        }
+        payload.order_number = on;
       } else {
-        payload.trip_id = formData.trip_id ? parseInt(formData.trip_id) : undefined;
+        const tid = formData.trip_id ? parseInt(formData.trip_id, 10) : NaN;
+        if (!Number.isInteger(tid) || tid <= 0) {
+          setSubmitError("Valid trip ID is required.");
+          return;
+        }
+        payload.trip_id = tid;
       }
       await axios.post("/expenses/", payload);
       setFormData({ order_number: "", trip_id: "", amount: "", description: "" });
@@ -57,6 +75,8 @@ const ExpensesPage = () => {
       fetchExpenses();
     } catch (err) {
       console.error("Failed to submit expense:", err);
+      const reason = err.response?.data?.detail || err.message || "Unknown error";
+      setSubmitError(`Failed to submit expense: ${reason}`);
     }
   };
 
@@ -100,6 +120,9 @@ const ExpensesPage = () => {
           onSubmit={handleFormSubmit}
           className="bg-white rounded-lg shadow p-4 mb-6 space-y-4"
         >
+          {submitError && (
+            <div className="text-sm text-red-600">{submitError}</div>
+          )}
           <div className="flex gap-4 items-center">
             <label className="text-sm text-gray-600">Add by:</label>
             <label className="flex items-center gap-2 text-sm">
