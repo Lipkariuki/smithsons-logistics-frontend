@@ -101,16 +101,8 @@ const SidebarLayout = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8">
-        <div className="bg-white border rounded-xl shadow-sm mb-6 px-5 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-700">
-            <LayoutDashboard size={18} />
-            <span className="font-medium">Admin Dashboard</span>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <Outlet />
-        </div>
+      <main className="flex-1 p-6">
+        <Outlet />
       </main>
     </div>
   );
