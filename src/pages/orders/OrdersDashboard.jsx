@@ -158,10 +158,9 @@ const AdminOrdersPage = () => {
   const handleDateFilterChange = (e) => {
     const selectedDate = e.target.value;
     setDateFilter(selectedDate);
+    const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
     if (selectedDate) {
-      const filtered = orders.filter((order) =>
-        order.date === selectedDate
-      );
+      const filtered = orders.filter((order) => fmt(order.date) === selectedDate);
       setFilteredOrders(filtered);
     } else {
       setFilteredOrders(orders);
@@ -318,7 +317,7 @@ const AdminOrdersPage = () => {
 
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
-                  <td className="py-2 px-4">{order.date}</td>
+                  <td className="py-2 px-4">{order.date ? new Date(order.date).toISOString().slice(0,10) : ""}</td>
                   <td className="py-2 px-4">{order.id}</td>
                   <td className="py-2 px-4 font-bold text-purple-700">{order.order_number}</td>
                   <td className="py-2 px-4">{order.invoice_number}</td>
