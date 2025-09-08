@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:8054": "vite --port 8054 --strictPort",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:8054": "vite preview --port 8054 --strictPort"
   },
   "dependencies": {
     "axios": "^1.9.0",
