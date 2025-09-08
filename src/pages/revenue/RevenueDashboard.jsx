@@ -129,11 +129,27 @@ const RevenueDashboard = () => {
     { label: "Revenue", key: "revenue" },
   ];
 
-  const dataForExport = safeArray.map((o) => ({
-    ...o,
-    date_fmt: o.date ? new Date(o.date).toISOString().slice(0,10) : "",
-    revenue: (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0),
-  }));
+  const dataForExport = (() => {
+    const rows = safeArray.map((o) => ({
+      ...o,
+      date_fmt: o.date ? new Date(o.date).toISOString().slice(0, 10) : "",
+      revenue: (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0),
+    }));
+    // Append a totals row matching the current filtered set
+    rows.push({
+      order_number: "Totals",
+      date_fmt: "",
+      product_description: "",
+      destination: "",
+      truck_plate: "",
+      driver_name: "",
+      total_amount: rows.reduce((s, r) => s + (r.total_amount || 0), 0),
+      expenses: rows.reduce((s, r) => s + (r.expenses || 0), 0),
+      commission: rows.reduce((s, r) => s + (r.commission || 0), 0),
+      revenue: rows.reduce((s, r) => s + ((r.total_amount || 0) - (r.expenses || 0) - (r.commission || 0)), 0),
+    });
+    return rows;
+  })();
 
   return (
     <div className="space-y-8 p-6">
