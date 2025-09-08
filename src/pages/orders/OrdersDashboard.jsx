@@ -177,10 +177,12 @@ const AdminOrdersPage = () => {
     }
     // Vehicle filter
     if (selVehicle) {
+      const selected = availableVehicles.find(v => String(v.id) === String(selVehicle));
+      const selPlate = (selected?.plate_number || "").toUpperCase();
       data = data.filter((order) => {
-        // Prefer vehicle_id when present; fallback to truck_plate
         if (order.vehicle_id) return String(order.vehicle_id) === String(selVehicle);
-        return order.truck_plate === selVehicle;
+        // fallback by plate match when vehicle_id missing
+        return (order.truck_plate || "").toUpperCase() === selPlate;
       });
     }
     setFilteredOrders(data);
