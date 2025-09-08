@@ -23,6 +23,7 @@ const SidebarLayout = () => {
     { name: "Orders", icon: <FileText size={18} />, path: "/admin/orders" },
     { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
     { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
+    { name: "Drivers", icon: <User size={18} />, path: "/admin/drivers" },
     { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
     { name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" },
     { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
