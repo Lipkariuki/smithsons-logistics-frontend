@@ -98,8 +98,16 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow-md px-6 py-4">
-        <h1 className="text-2xl font-bold text-purple-700">Admin Dashboards</h1>
-        <p className="text-sm text-gray-500">Overview of orders and financial performance</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-purple-700">Admin Dashboards</h1>
+            <p className="text-sm text-gray-500">Overview of orders and financial performance</p>
+          </div>
+          <div className="text-right">
+            <div className="text-base font-semibold text-purple-700">Smithsons Logistics</div>
+            <div className="text-xs text-gray-500">Powering Every Trip. Empowering Every Partner.</div>
+          </div>
+        </div>
       </header>
 
       <main className="p-6 space-y-6">

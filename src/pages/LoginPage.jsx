@@ -52,7 +52,11 @@ const Login = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-2">🔐 Welcome Back!</h1>
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-extrabold text-purple-700">Smithsons Logistics</h1>
+          <p className="text-sm text-gray-600">Powering Every Trip. Empowering Every Partner.</p>
+        </div>
+        <h2 className="text-xl font-bold text-center mb-2">🔐 Welcome Back</h2>
         <p className="text-center text-gray-600 mb-6">Login to your dashboard</p>
 
         <form onSubmit={handleLogin} className="space-y-4">

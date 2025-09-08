@@ -36,7 +36,10 @@ const SidebarLayout = () => {
         <div className="mb-5">
           <div className="flex items-center gap-2">
             <Truck size={20} className="text-purple-700" />
-            <h1 className="text-xl font-semibold text-purple-700">Smithsons Console</h1>
+            <div>
+              <h1 className="text-xl font-semibold text-purple-700 leading-tight">Smithsons Logistics</h1>
+              <p className="text-xs text-gray-500">Powering Every Trip. Empowering Every Partner.</p>
+            </div>
           </div>
         </div>
 
