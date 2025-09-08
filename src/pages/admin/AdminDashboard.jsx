@@ -8,11 +8,26 @@ const AdminDashboard = () => {
   const [availableVehicles, setAvailableVehicles] = useState([]);
   const [editRowId, setEditRowId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const fetchOrders = () => {
     axiosAuth.get("/admin/orders")
-      .then((res) => setOrders(res.data))
-      .catch((err) => console.error("Fetch orders failed:", err));
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        const sorted = data.slice().sort((a, b) => {
+          const ad = a.date ? new Date(a.date) : null;
+          const bd = b.date ? new Date(b.date) : null;
+          if (ad && bd) return bd - ad; // newest first
+          if (bd && !ad) return 1;
+          if (ad && !bd) return -1;
+          return (b.id || 0) - (a.id || 0);
+        });
+        setOrders(sorted);
+      })
+      .catch((err) => {
+        console.error("Fetch orders failed:", err);
+      });
   };
 
   const fetchDrivers = () => {
@@ -35,6 +50,7 @@ const AdminDashboard = () => {
 
   const handleSaveClick = async (orderId) => {
     try {
+      setError("");
       if (editFormData.driver_id) {
         await axiosAuth.put(`/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`);
       }
@@ -51,8 +67,13 @@ const AdminDashboard = () => {
       setEditRowId(null);
       setEditFormData({});
       fetchOrders();
+      setMessage("Record updated successfully.");
+      setTimeout(() => setMessage(""), 3000);
     } catch (err) {
       console.error("Save failed:", err);
+      const reason = err.response?.data?.detail || err.message;
+      setError(`Update failed: ${reason}`);
+      setTimeout(() => setError(""), 4000);
     }
   };
 
@@ -82,6 +103,16 @@ const AdminDashboard = () => {
       </header>
 
       <main className="p-6 space-y-6">
+        {message && (
+          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded">
+            {message}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded">
+            {error}
+          </div>
+        )}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link to="/admin/finance" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
             <h3 className="text-lg font-bold text-gray-800">Financial Dashboard</h3>
