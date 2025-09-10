@@ -32,7 +32,7 @@ const SidebarLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-100 text-[15px]">
       {/* Sidebar */}
-      <aside className="w-80 bg-white border-r p-5 shadow-sm flex flex-col sticky top-0 h-screen overflow-y-auto">
+      <aside className="w-72 xl:w-80 bg-white border-r p-5 shadow-sm flex flex-col sticky top-0 h-screen overflow-y-auto flex-shrink-0">
         {/* Brand */}
         <div className="mb-5">
           <div className="flex items-center gap-2">
@@ -107,8 +107,10 @@ const SidebarLayout = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-6">
-        <Outlet />
+      <main className="min-w-0 flex-1 p-4 md:p-6">
+        <div className="max-w-screen-2xl mx-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

@@ -477,7 +477,8 @@ const AdminOrdersPage = () => {
       </div>
 
       <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-        <table className="min-w-full table-auto text-sm">
+        <div className="min-w-[1100px]">
+        <table className="w-full table-auto text-sm">
           <thead>
             <tr className="text-left border-b bg-gray-100 text-gray-600">
               <th className="py-2 px-4">Date</th>
@@ -604,6 +605,7 @@ const AdminOrdersPage = () => {
             })}
           </tbody>
         </table>
+        </div>
       </section>
     </div>
   );
