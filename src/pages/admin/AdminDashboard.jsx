@@ -64,6 +64,11 @@ const AdminDashboard = () => {
           description: editFormData.expense_description,
         });
       }
+      if (editFormData.commission_rate !== undefined && editFormData.trip_id && String(editFormData.commission_rate).trim() !== "") {
+        await axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
+          params: { rate_percent: parseFloat(editFormData.commission_rate) },
+        });
+      }
       setEditRowId(null);
       setEditFormData({});
       fetchOrders();
@@ -86,6 +91,7 @@ const AdminDashboard = () => {
       vehicle_id: "",
       expense_amount: "",
       expense_description: "",
+      commission_rate: "",
       trip_id: order.trip_id,
     });
   };
@@ -247,7 +253,19 @@ const AdminDashboard = () => {
                         `${order.expenses.toLocaleString()} KES`
                       )}
                     </td>
-                    <td className="py-2 px-4">{order.commission.toLocaleString()}</td>
+                    <td className="py-2 px-4">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          placeholder="%"
+                          value={editFormData.commission_rate}
+                          onChange={(e) => setEditFormData({ ...editFormData, commission_rate: e.target.value })}
+                          className="w-full p-1 border rounded"
+                        />
+                      ) : (
+                        order.commission.toLocaleString()
+                      )}
+                    </td>
                     <td className="py-2 px-4 text-green-600 font-semibold">{revenue.toLocaleString()}</td>
                     <td className="py-2 px-4 space-x-2">
                       {isEditing ? (
