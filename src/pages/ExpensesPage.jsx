@@ -3,6 +3,9 @@ import axios from "../utils/axiosAuth"; // ✅ use the shared axios instance
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState({ amount: "", description: "" });
+  const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const [showForm, setShowForm] = useState(false);
   const [mode, setMode] = useState("order"); // 'order' or 'trip'
   const [formData, setFormData] = useState({
@@ -21,6 +24,38 @@ const ExpensesPage = () => {
       .get("/expenses/")
       .then((res) => setExpenses(res.data))
       .catch((err) => console.error("Failed to fetch expenses:", err));
+  };
+
+  const startEdit = (exp) => {
+    setEditingId(exp.id);
+    setEditDraft({ amount: String(exp.amount), description: exp.description || "" });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditDraft({ amount: "", description: "" });
+  };
+
+  const saveEdit = async (id) => {
+    try {
+      await axios.patch(`/expenses/${id}`, {
+        amount: Number(editDraft.amount),
+        description: editDraft.description,
+      });
+      cancelEdit();
+      fetchExpenses();
+    } catch (e) {
+      console.error("Failed to update expense:", e);
+    }
+  };
+
+  const deleteExpense = async (id) => {
+    try {
+      await axios.delete(`/expenses/${id}`);
+      fetchExpenses();
+    } catch (e) {
+      console.error("Failed to delete expense:", e);
+    }
   };
 
   const fetchOrderOptions = async (q) => {
@@ -202,6 +237,10 @@ const ExpensesPage = () => {
       )}
 
       <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
+        <div className="flex justify-between items-center mb-3 text-sm text-gray-700">
+          <span>Total expenses: <span className="font-semibold">{total.toLocaleString()} KES</span></span>
+          <span>Rows: {expenses.length}</span>
+        </div>
         {expenses.length > 0 ? (
           <table className="min-w-full table-auto text-sm">
             <thead className="bg-gray-100 text-left text-gray-600">
@@ -212,6 +251,7 @@ const ExpensesPage = () => {
                 <th className="py-2 px-4">Amount (KES)</th>
                 <th className="py-2 px-4">Description</th>
                 <th className="py-2 px-4">Timestamp</th>
+                <th className="py-2 px-4">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -220,10 +260,35 @@ const ExpensesPage = () => {
                   <td className="py-2 px-4">{exp.order_number || "-"}</td>
                   <td className="py-2 px-4">{exp.vehicle_plate || "-"}</td>
                   <td className="py-2 px-4">{exp.destination || "-"}</td>
-                  <td className="py-2 px-4">{exp.amount.toLocaleString()}</td>
-                  <td className="py-2 px-4">{exp.description}</td>
+                  <td className="py-2 px-4">
+                    {editingId === exp.id ? (
+                      <input type="number" className="border rounded px-2 py-1 w-28" value={editDraft.amount} onChange={(e)=>setEditDraft({...editDraft, amount: e.target.value})} />
+                    ) : (
+                      exp.amount.toLocaleString()
+                    )}
+                  </td>
+                  <td className="py-2 px-4">
+                    {editingId === exp.id ? (
+                      <input type="text" className="border rounded px-2 py-1" value={editDraft.description} onChange={(e)=>setEditDraft({...editDraft, description: e.target.value})} />
+                    ) : (
+                      exp.description
+                    )}
+                  </td>
                   <td className="py-2 px-4">
                     {new Date(exp.timestamp).toLocaleString()}
+                  </td>
+                  <td className="py-2 px-4 space-x-2">
+                    {editingId === exp.id ? (
+                      <>
+                        <button onClick={()=>saveEdit(exp.id)} className="bg-green-600 text-white px-2 py-1 rounded">Save</button>
+                        <button onClick={cancelEdit} className="border px-2 py-1 rounded">Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={()=>startEdit(exp)} className="text-blue-600">Edit</button>
+                        <button onClick={()=>deleteExpense(exp.id)} className="text-red-600">Delete</button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
