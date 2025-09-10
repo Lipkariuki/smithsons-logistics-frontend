@@ -20,7 +20,7 @@ const SidebarLayout = () => {
 
   const menuItems = [
     { name: "Revenue", icon: <Wallet size={18} />, path: "/admin/finance" },
-    { name: "Owner Earnings", icon: <Wallet size={18} />, path: "/admin/owner-earnings" },
+    { name: "Platform Earnings", icon: <Wallet size={18} />, path: "/admin/platform-earnings" },
     { name: "Orders", icon: <FileText size={18} />, path: "/admin/orders" },
     { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
     { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },

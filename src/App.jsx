@@ -18,7 +18,7 @@ import ExpensesPage from "./pages/ExpensesPage";
 import ReportsPage from "./pages/ReportsPage";
 import RevenueDashboard from "./pages/revenue/RevenueDashboard";
 import AdminEarningsDashboard from "./pages/AdminEarnings";
-import OwnerEarningsComingSoon from "./pages/admin/OwnerEarningsComingSoon";
+import PlatformEarningsComingSoon from "./pages/admin/PlatformEarningsComingSoon";
 import PartnerOrdersDashboard from "./pages/partners/PartnerOrdersDashboard";
 import CalculatorPage from "./pages/CalculatorPage";
 
@@ -39,7 +39,7 @@ const App = () => {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="finance" element={<RevenueDashboard />} />
         <Route path="admin_earnings" element={<AdminEarningsDashboard />} />
-        <Route path="owner-earnings" element={<OwnerEarningsComingSoon />} />
+        <Route path="platform-earnings" element={<PlatformEarningsComingSoon />} />
         <Route path="calculator" element={<CalculatorPage />} />
       </Route>
 
