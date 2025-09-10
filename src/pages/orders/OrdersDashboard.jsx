@@ -111,32 +111,52 @@ const AdminOrdersPage = () => {
   };
 
   const handleSaveClick = async (orderId) => {
+    setMessage("");
+    setError("");
     try {
-      if (editFormData.driver_id) {
-        await axiosAuth.put(`/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`);
+      const tasks = [];
+      if (editFormData.driver_id && String(editFormData.driver_id).trim() !== "") {
+        tasks.push(axiosAuth.put(`/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`));
       }
-      if (editFormData.vehicle_id) {
-        await axiosAuth.put(`/orders/${orderId}/assign-vehicle?vehicle_id=${editFormData.vehicle_id}`);
+      if (editFormData.vehicle_id && String(editFormData.vehicle_id).trim() !== "") {
+        tasks.push(axiosAuth.put(`/orders/${orderId}/assign-vehicle?vehicle_id=${editFormData.vehicle_id}`));
       }
-      if (editFormData.expense_amount && editFormData.trip_id) {
-        await axiosAuth.post("/expenses/", {
-          trip_id: editFormData.trip_id,
-          amount: parseFloat(editFormData.expense_amount),
-          description: editFormData.expense_description
-        });
+      if (editFormData.trip_id) {
+        if (editFormData.expense_amount !== undefined && String(editFormData.expense_amount).trim() !== "") {
+          tasks.push(
+            axiosAuth.post("/expenses/", {
+              trip_id: editFormData.trip_id,
+              amount: parseFloat(editFormData.expense_amount),
+              description: editFormData.expense_description || undefined,
+            })
+          );
+        }
+        if (editFormData.commission_rate !== undefined && String(editFormData.commission_rate).trim() !== "") {
+          tasks.push(
+            axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
+              params: { rate_percent: parseFloat(editFormData.commission_rate) },
+            })
+          );
+        }
       }
-      if (editFormData.commission_rate && editFormData.trip_id) {
-        await axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
-          params: {
-            rate_percent: parseFloat(editFormData.commission_rate)
-          }
-        });
+
+      if (tasks.length === 0) {
+        setEditRowId(null);
+        setEditFormData({});
+        return;
       }
+
+      await Promise.all(tasks);
       setEditRowId(null);
       setEditFormData({});
       fetchOrders();
+      setMessage("Record updated successfully.");
+      setTimeout(() => setMessage(""), 3000);
     } catch (err) {
       console.error("Save failed:", err);
+      const reason = err.response?.data?.detail || err.message;
+      setError(`Update failed: ${reason}`);
+      setTimeout(() => setError(""), 4000);
     }
   };
 
