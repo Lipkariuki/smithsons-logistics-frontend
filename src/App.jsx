@@ -20,7 +20,7 @@ import RevenueDashboard from "./pages/revenue/RevenueDashboard";
 import AdminEarningsDashboard from "./pages/AdminEarnings";
 import PlatformEarningsComingSoon from "./pages/admin/PlatformEarningsComingSoon";
 import PartnerOrdersDashboard from "./pages/partners/PartnerOrdersDashboard";
-import CalculatorPage from "./pages/CalculatorPage";
+// import CalculatorPage from "./pages/CalculatorPage"; // removed
 import IdleLogout from "./components/IdleLogout";
 
 const App = () => {
@@ -43,7 +43,7 @@ const App = () => {
         <Route path="finance" element={<RevenueDashboard />} />
         <Route path="admin_earnings" element={<AdminEarningsDashboard />} />
         <Route path="platform-earnings" element={<PlatformEarningsComingSoon />} />
-        <Route path="calculator" element={<CalculatorPage />} />
+        { /* <Route path="calculator" element={<CalculatorPage />} /> */ }
       </Route>
 
       {/* Partner/owner routes */}

@@ -26,7 +26,7 @@ const SidebarLayout = () => {
     { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
     { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
     { name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" },
-    { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
+    // { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
   ];
 
   return (
