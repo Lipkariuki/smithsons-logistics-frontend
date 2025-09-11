@@ -21,9 +21,12 @@ import AdminEarningsDashboard from "./pages/AdminEarnings";
 import PlatformEarningsComingSoon from "./pages/admin/PlatformEarningsComingSoon";
 import PartnerOrdersDashboard from "./pages/partners/PartnerOrdersDashboard";
 import CalculatorPage from "./pages/CalculatorPage";
+import IdleLogout from "./components/IdleLogout";
 
 const App = () => {
   return (
+    <>
+    <IdleLogout />
     <Routes>
       <Route path="/login" element={<LoginPage />} />
 
@@ -55,6 +58,7 @@ const App = () => {
       {/* fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </>
   );
 };
 
