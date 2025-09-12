@@ -234,20 +234,21 @@ const AdminDashboard = () => {
                     <td className="py-2 px-4">{order.total_amount.toLocaleString()}</td>
                     <td className="py-2 px-4">
                       {isEditing ? (
-                        <div className="flex flex-col gap-1 md:flex-row md:items-center">
+                        <div className="flex flex-col gap-2 md:flex-row md:items-center">
                           <input
-                            type="number"
-                            placeholder="Amount"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Expense amount (KES)"
                             value={editFormData.expense_amount}
                             onChange={(e) => setEditFormData({ ...editFormData, expense_amount: e.target.value })}
-                            className="w-full p-1 border rounded"
+                            className="border rounded px-3 py-2 w-40"
                           />
                           <input
                             type="text"
-                            placeholder="Description"
+                            placeholder="Expense description"
                             value={editFormData.expense_description}
                             onChange={(e) => setEditFormData({ ...editFormData, expense_description: e.target.value })}
-                            className="w-full p-1 border rounded"
+                            className="border rounded px-3 py-2 w-64"
                           />
                         </div>
                       ) : (

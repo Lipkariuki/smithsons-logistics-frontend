@@ -491,7 +491,6 @@ const AdminOrdersPage = () => {
               <th className="py-2 px-4">Vehicle</th>
               <th className="py-2 px-4">Expenses</th>
               <th className="py-2 px-4">Commission</th>
-              <th className="py-2 px-4">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -575,31 +574,7 @@ const AdminOrdersPage = () => {
                       `${order.commission.toLocaleString()} KES`
                     )}
                   </td>
-                  <td className="py-2 px-4 space-x-2">
-                    {isEditing ? (
-                      <>
-                        <button
-                          onClick={() => handleSaveClick(order.id)}
-                          className="bg-green-600 text-white px-2 py-1 rounded text-xs"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={handleCancelClick}
-                          className="border px-2 py-1 rounded text-xs"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleEditClick(order)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        ✏️
-                      </button>
-                    )}
-                  </td>
+                  {/* Actions removed to avoid confusion; edits happen on Admin Dashboard only */}
                 </tr>
               );
             })}
