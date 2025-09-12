@@ -295,15 +295,18 @@ const AdminOrdersPage = () => {
             ))}
           </select>
           <input
+            type="number"
             name="cases"
-            placeholder="CASES"
+            placeholder="OFFLOADING CHARGES (KES)"
             value={createForm.cases}
             onChange={handleCreateChange}
             className="p-2 border rounded"
           />
           <input
+            type="number"
+            step="0.01"
             name="price_per_case"
-            placeholder="PRICE PER CASE"
+            placeholder="MILEAGE CHARGE (KES)"
             value={createForm.price_per_case}
             onChange={handleCreateChange}
             className="p-2 border rounded"
