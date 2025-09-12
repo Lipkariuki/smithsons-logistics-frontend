@@ -9,8 +9,7 @@ const AdminOrdersPage = () => {
   const [availableVehicles, setAvailableVehicles] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
   const [destinations, setDestinations] = useState([]);
-  const [editRowId, setEditRowId] = useState(null);
-  const [editFormData, setEditFormData] = useState({});
+  // Read-only on Orders page: no inline editing here
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -110,74 +109,7 @@ const AdminOrdersPage = () => {
     }
   };
 
-  const handleSaveClick = async (orderId) => {
-    setMessage("");
-    setError("");
-    try {
-      const tasks = [];
-      if (editFormData.driver_id && String(editFormData.driver_id).trim() !== "") {
-        tasks.push(axiosAuth.put(`/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`));
-      }
-      if (editFormData.vehicle_id && String(editFormData.vehicle_id).trim() !== "") {
-        tasks.push(axiosAuth.put(`/orders/${orderId}/assign-vehicle?vehicle_id=${editFormData.vehicle_id}`));
-      }
-      if (editFormData.trip_id) {
-        if (editFormData.expense_amount !== undefined && String(editFormData.expense_amount).trim() !== "") {
-          tasks.push(
-            axiosAuth.post("/expenses/", {
-              trip_id: editFormData.trip_id,
-              amount: parseFloat(editFormData.expense_amount),
-              description: editFormData.expense_description || undefined,
-            })
-          );
-        }
-        if (editFormData.commission_rate !== undefined && String(editFormData.commission_rate).trim() !== "") {
-          tasks.push(
-            axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
-              params: { rate_percent: parseFloat(editFormData.commission_rate) },
-            })
-          );
-        }
-      }
-
-      if (tasks.length === 0) {
-        setEditRowId(null);
-        setEditFormData({});
-        return;
-      }
-
-      await Promise.all(tasks);
-      setEditRowId(null);
-      setEditFormData({});
-      fetchOrders();
-      setMessage("Record updated successfully.");
-      setTimeout(() => setMessage(""), 3000);
-    } catch (err) {
-      console.error("Save failed:", err);
-      const reason = err.response?.data?.detail || err.message;
-      setError(`Update failed: ${reason}`);
-      setTimeout(() => setError(""), 4000);
-    }
-  };
-
-  const handleEditClick = (order) => {
-    setEditRowId(order.id);
-    setEditFormData({
-      product_description: order.product_description,
-      destination: order.destination,
-      driver_id: "",
-      vehicle_id: "",
-      expense_amount: "",
-      expense_description: "",
-      commission_rate: "",
-      trip_id: order.trip_id
-    });
-  };
-
-  const handleCancelClick = () => {
-    setEditRowId(null);
-    setEditFormData({});
-  };
+  // No edit/save/cancel handlers required on this page
 
   const applyFilters = (selStartDate = startDate, selEndDate = endDate, selVehicle = vehicleFilter) => {
     const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
@@ -276,6 +208,9 @@ const AdminOrdersPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-2xl font-bold text-purple-700 mb-4">Admin Orders</h1>
+      <div className="mb-3 text-xs text-gray-500">
+        Note: Editing (assignments, expenses, commission) is available on the Admin Dashboard.
+      </div>
       {message && <div className="text-green-600 mb-2">{message}</div>}
       {error && <div className="text-red-600 mb-2">{error}</div>}
 
@@ -495,8 +430,6 @@ const AdminOrdersPage = () => {
           </thead>
           <tbody>
             {filteredOrders.map((order) => {
-              const isEditing = editRowId === order.id;
-
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
                   <td className="py-2 px-4">{order.date ? new Date(order.date).toISOString().slice(0,10) : ""}</td>
@@ -506,75 +439,13 @@ const AdminOrdersPage = () => {
                   <td className="py-2 px-4">{order.product_description}</td>
                   <td className="py-2 px-4">{order.destination}</td>
                   <td className="py-2 px-4">
-                    {isEditing ? (
-                      <select
-                        value={editFormData.driver_id}
-                        onChange={(e) => setEditFormData({ ...editFormData, driver_id: e.target.value })}
-                        className="w-full border rounded p-1"
-                      >
-                        <option value="">Assign Driver</option>
-                        {availableDrivers.map((driver) => (
-                          <option key={driver.id} value={driver.id}>{driver.name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className={order.driver_name === "Unassigned" ? "text-red-600" : ""}>
-                        {order.driver_name}
-                      </span>
-                    )}
+                    <span className={order.driver_name === "Unassigned" ? "text-red-600" : ""}>
+                      {order.driver_name}
+                    </span>
                   </td>
-                  <td className="py-2 px-4">
-                    {isEditing ? (
-                      <select
-                        value={editFormData.vehicle_id}
-                        onChange={(e) => setEditFormData({ ...editFormData, vehicle_id: e.target.value })}
-                        className="w-full border rounded p-1"
-                      >
-                        <option value="">Assign Vehicle</option>
-                        {availableVehicles.map((vehicle) => (
-                          <option key={vehicle.id} value={vehicle.id}>{vehicle.plate_number}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      order.truck_plate ?? <span className="text-red-600">Unassigned</span>
-                    )}
-                  </td>
-                  <td className="py-2 px-4">
-                    {isEditing ? (
-                      <div className="flex flex-col gap-1 md:flex-row md:items-center">
-                        <input
-                          type="number"
-                          placeholder="Amount"
-                          value={editFormData.expense_amount}
-                          onChange={(e) => setEditFormData({ ...editFormData, expense_amount: e.target.value })}
-                          className="w-full p-1 border rounded"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Description"
-                          value={editFormData.expense_description}
-                          onChange={(e) => setEditFormData({ ...editFormData, expense_description: e.target.value })}
-                          className="w-full p-1 border rounded"
-                        />
-                      </div>
-                    ) : (
-                      `${order.expenses.toLocaleString()} KES`
-                    )}
-                  </td>
-                  <td className="py-2 px-4">
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        placeholder="%"
-                        value={editFormData.commission_rate}
-                        onChange={(e) => setEditFormData({ ...editFormData, commission_rate: e.target.value })}
-                        className="w-full p-1 border rounded"
-                      />
-                    ) : (
-                      `${order.commission.toLocaleString()} KES`
-                    )}
-                  </td>
-                  {/* Actions removed to avoid confusion; edits happen on Admin Dashboard only */}
+                  <td className="py-2 px-4">{order.truck_plate ?? <span className="text-red-600">Unassigned</span>}</td>
+                  <td className="py-2 px-4">{`${(order.expenses || 0).toLocaleString()} KES`}</td>
+                  <td className="py-2 px-4">{`${(order.commission || 0).toLocaleString()} KES`}</td>
                 </tr>
               );
             })}
