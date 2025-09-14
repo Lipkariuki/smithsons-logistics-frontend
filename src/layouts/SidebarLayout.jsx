@@ -35,8 +35,14 @@ const SidebarLayout = () => {
       <aside className="w-72 xl:w-80 bg-white border-r p-5 shadow-sm flex flex-col sticky top-0 h-screen overflow-y-auto flex-shrink-0">
         {/* Brand */}
         <div className="mb-5">
-          <div className="flex items-center gap-2">
-            <Truck size={20} className="text-purple-700" />
+          <div className="flex items-center gap-3">
+            {/* Brand logo from /public/logo.svg */}
+            <img
+              src="/logo.svg"
+              alt="Smithsons Logistics"
+              className="h-8 w-8 object-contain select-none"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
             <div>
               <h1 className="text-xl font-semibold text-purple-700 leading-tight">Smithsons Logistics</h1>
               <p className="text-xs text-gray-500">Powering Every Trip. Empowering Every Partner.</p>
