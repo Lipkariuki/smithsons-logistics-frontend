@@ -51,6 +51,12 @@ const AdminDashboard = () => {
   const handleSaveClick = async (orderId) => {
     try {
       setError("");
+      if (editFormData.revenue_amount && editFormData.trip_id) {
+        await axiosAuth.patch(`/trips/${editFormData.trip_id}/revenue`, {
+          revenue: parseFloat(String(editFormData.revenue_amount).replace(/,/g, '')),
+          reason: 'Admin manual adjustment',
+        });
+      }
       if (editFormData.driver_id) {
         await axiosAuth.put(`/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`);
       }
@@ -93,6 +99,7 @@ const AdminDashboard = () => {
       expense_description: "",
       commission_rate: "",
       trip_id: order.trip_id,
+      revenue_amount: order.total_amount ?? "",
     });
   };
 
@@ -156,7 +163,7 @@ const AdminDashboard = () => {
             <th className="py-2 px-4">Destination</th>
             <th className="py-2 px-4">Driver</th>
             <th className="py-2 px-4">Vehicle</th>
-            <th className="py-2 px-4">Total Paid</th>
+            <th className="py-2 px-4">Trip Revenue</th>
             <th className="py-2 px-4">Expenses</th>
             <th className="py-2 px-4">Commission</th>
             <th className="py-2 px-4">Revenue</th>
@@ -166,7 +173,7 @@ const AdminDashboard = () => {
 
             <tbody>
               {orders.map((order) => {
-                const revenue = order.total_amount - order.expenses - order.commission;
+                const revenue = (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0);
                 const isEditing = editRowId === order.id;
 
                 return (
@@ -231,7 +238,20 @@ const AdminDashboard = () => {
                         order.truck_plate ?? <span className="text-red-600">Unassigned</span>
                       )}
                     </td>
-                    <td className="py-2 px-4">{order.total_amount.toLocaleString()}</td>
+                    <td className="py-2 px-4">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="Trip revenue (KES)"
+                          value={editFormData.revenue_amount ?? ""}
+                          onChange={(e) => setEditFormData({ ...editFormData, revenue_amount: e.target.value })}
+                          className="border rounded px-3 py-1 w-40"
+                        />
+                      ) : (
+                        (order.total_amount || 0).toLocaleString()
+                      )}
+                    </td>
                     <td className="py-2 px-4">
                       {isEditing ? (
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
