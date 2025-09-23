@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosAuth from "../../utils/axiosAuth"; // ✅ correct import
+import Pagination from "../../components/Pagination";
 
 const AdminDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -10,6 +11,8 @@ const AdminDashboard = () => {
   const [editFormData, setEditFormData] = useState({});
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   const fetchOrders = () => {
     axiosAuth.get("/admin/orders")
@@ -24,6 +27,7 @@ const AdminDashboard = () => {
           return (b.id || 0) - (a.id || 0);
         });
         setOrders(sorted);
+        setPage(1);
       })
       .catch((err) => {
         console.error("Fetch orders failed:", err);
@@ -47,6 +51,11 @@ const AdminDashboard = () => {
     fetchDrivers();
     fetchVehicles();
   }, []);
+
+  const pagedOrders = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return orders.slice(start, start + perPage);
+  }, [orders, page, perPage]);
 
   const handleSaveClick = async (orderId) => {
     try {
@@ -234,9 +243,9 @@ const AdminDashboard = () => {
         {/* Orders Table */}
         <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
           <h2 className="text-xl font-semibold mb-4">Orders</h2>
-          <div className="min-w-[1100px]">
+          <div className="min-w-[1100px] max-h-[70vh] overflow-auto">
           <table className="w-full table-auto text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-white">
           <tr className="text-left border-b bg-gray-100 text-gray-600">
             <th className="py-2 px-4">Order ID</th>
             <th className="py-2 px-4">DHL Order #</th>
@@ -254,7 +263,7 @@ const AdminDashboard = () => {
         </thead>
 
             <tbody>
-              {orders.map((order) => {
+              {pagedOrders.map((order) => {
                 const revenue = (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0);
                 const isEditing = editRowId === order.id;
 
@@ -408,6 +417,13 @@ const AdminDashboard = () => {
             </tbody>
           </table>
           </div>
+          <Pagination
+            page={page}
+            perPage={perPage}
+            total={orders.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
         </section>
       </main>
     </div>
