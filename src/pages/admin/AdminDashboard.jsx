@@ -103,11 +103,16 @@ const AdminDashboard = () => {
 
       // 4) Add expense (optional)
       if (editFormData.expense_amount && editFormData.trip_id) {
-        await axiosAuth.post("/expenses/", {
-          trip_id: editFormData.trip_id,
-          amount: parseFloat(editFormData.expense_amount),
-          description: editFormData.expense_description,
-        });
+        const amt = parseFloat(String(editFormData.expense_amount).replace(/,/g, ''));
+        if (Number.isFinite(amt) && amt > 0) {
+          await axiosAuth.post("/expenses/", {
+            trip_id: editFormData.trip_id,
+            amount: amt,
+            description: editFormData.expense_description,
+          });
+        } else {
+          console.warn('Skipped expense: invalid amount', editFormData.expense_amount);
+        }
       }
 
       // 5) Update commission rate (optional)
@@ -116,9 +121,40 @@ const AdminDashboard = () => {
         editFormData.trip_id &&
         String(editFormData.commission_rate).trim() !== ""
       ) {
-        await axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
-          params: { rate_percent: parseFloat(editFormData.commission_rate) },
-        });
+        const rate = parseFloat(String(editFormData.commission_rate));
+        if (Number.isFinite(rate)) {
+          // Try PATCH body first
+          let updated = false;
+          try {
+            await axiosAuth.patch(`/commissions/${editFormData.trip_id}`, { rate_percent: rate });
+            updated = true;
+          } catch (e1) {
+            if (e1?.response?.status === 405 || e1?.response?.status === 404) {
+              try {
+                // Fallback to PUT with params (previous behavior)
+                await axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
+                  params: { rate_percent: rate },
+                });
+                updated = true;
+              } catch (e2) {
+                try {
+                  // Final fallback: trip-scoped endpoint
+                  await axiosAuth.put(`/trips/${editFormData.trip_id}/commission`, { rate_percent: rate });
+                  updated = true;
+                } catch (e3) {
+                  console.warn('Commission update failed (all attempts):', e1, e2, e3);
+                }
+              }
+            } else {
+              console.warn('Commission update failed (PATCH):', e1);
+            }
+          }
+          if (!updated) {
+            // Non-blocking warning; proceed
+          }
+        } else {
+          console.warn('Skipped commission update: invalid rate', editFormData.commission_rate);
+        }
       }
 
       setEditRowId(null);
