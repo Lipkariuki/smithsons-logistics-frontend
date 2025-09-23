@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "../utils/axiosAuth"; // ✅ use the shared axios instance
+import Pagination from "../components/Pagination";
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
@@ -18,11 +19,13 @@ const ExpensesPage = () => {
   const [orderQueryTimer, setOrderQueryTimer] = useState(null);
   const [searching, setSearching] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   const fetchExpenses = () => {
     axios
       .get("/expenses/")
-      .then((res) => setExpenses(res.data))
+      .then((res) => { setExpenses(res.data); setPage(1); })
       .catch((err) => console.error("Failed to fetch expenses:", err));
   };
 
@@ -118,6 +121,11 @@ const ExpensesPage = () => {
   useEffect(() => {
     fetchExpenses();
   }, []);
+
+  const pagedExpenses = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return expenses.slice(start, start + perPage);
+  }, [expenses, page, perPage]);
 
   useEffect(() => {
     if (!(showForm && mode === "order")) return;
@@ -242,8 +250,9 @@ const ExpensesPage = () => {
           <span>Rows: {expenses.length}</span>
         </div>
         {expenses.length > 0 ? (
+          <div className="max-h-[70vh] overflow-auto">
           <table className="min-w-full table-auto text-sm">
-            <thead className="bg-gray-100 text-left text-gray-600">
+            <thead className="sticky top-0 z-10 bg-white text-left text-gray-600">
               <tr>
                 <th className="py-2 px-4">DHL Order #</th>
                 <th className="py-2 px-4">Vehicle Plate</th>
@@ -255,7 +264,7 @@ const ExpensesPage = () => {
               </tr>
             </thead>
             <tbody>
-              {expenses.map((exp) => (
+              {pagedExpenses.map((exp) => (
                 <tr key={exp.id} className="border-t text-gray-700">
                   <td className="py-2 px-4">{exp.order_number || "-"}</td>
                   <td className="py-2 px-4">{exp.vehicle_plate || "-"}</td>
@@ -294,6 +303,15 @@ const ExpensesPage = () => {
               ))}
             </tbody>
           </table>
+          </div>
+          
+          <Pagination
+            page={page}
+            perPage={perPage}
+            total={expenses.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
         ) : (
           <p className="text-gray-500 text-sm">No expenses found.</p>
         )}
