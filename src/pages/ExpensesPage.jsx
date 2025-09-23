@@ -304,7 +304,10 @@ const ExpensesPage = () => {
             </tbody>
           </table>
           </div>
-          
+        ) : (
+          <p className="text-gray-500 text-sm">No expenses found.</p>
+        )}
+        {expenses.length > 0 && (
           <Pagination
             page={page}
             perPage={perPage}
@@ -312,8 +315,6 @@ const ExpensesPage = () => {
             onPageChange={setPage}
             onPerPageChange={setPerPage}
           />
-        ) : (
-          <p className="text-gray-500 text-sm">No expenses found.</p>
         )}
       </div>
     </div>
