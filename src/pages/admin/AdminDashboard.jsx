@@ -51,18 +51,57 @@ const AdminDashboard = () => {
   const handleSaveClick = async (orderId) => {
     try {
       setError("");
-      if (editFormData.revenue_amount && editFormData.trip_id) {
-        await axiosAuth.patch(`/trips/${editFormData.trip_id}/revenue`, {
-          revenue: parseFloat(String(editFormData.revenue_amount).replace(/,/g, '')),
-          reason: 'Admin manual adjustment',
-        });
-      }
+      // Find the original order to compare values (e.g., revenue)
+      const original = orders.find((o) => o.id === orderId) || {};
+
+      // 1) Assign driver first (so revenue endpoint issues won't block assignment)
       if (editFormData.driver_id) {
         await axiosAuth.put(`/orders/${orderId}/assign-driver?driver_id=${editFormData.driver_id}`);
       }
+
+      // 2) Assign vehicle next
       if (editFormData.vehicle_id) {
         await axiosAuth.put(`/orders/${orderId}/assign-vehicle?vehicle_id=${editFormData.vehicle_id}`);
       }
+
+      // 3) Update revenue only if changed; do not block other updates if this fails
+      const cleanedRevenue =
+        typeof editFormData.revenue_amount === 'number'
+          ? editFormData.revenue_amount
+          : parseFloat(String(editFormData.revenue_amount || '').replace(/,/g, ''));
+      const originalRevenue = Number(original.total_amount ?? NaN);
+      const revenueChanged =
+        editFormData.trip_id &&
+        !Number.isNaN(cleanedRevenue) &&
+        !Number.isNaN(originalRevenue) &&
+        cleanedRevenue !== originalRevenue;
+
+      if (revenueChanged) {
+        try {
+          await axiosAuth.patch(`/trips/${editFormData.trip_id}/revenue`, {
+            revenue: cleanedRevenue,
+            reason: 'Admin manual adjustment',
+          });
+        } catch (e) {
+          // Fallback if backend does not allow PATCH on this route
+          if (e?.response?.status === 405) {
+            try {
+              await axiosAuth.put(`/trips/${editFormData.trip_id}/revenue`, {
+                revenue: cleanedRevenue,
+                reason: 'Admin manual adjustment',
+              });
+            } catch (e2) {
+              console.warn('Revenue update failed (PUT fallback):', e2);
+              // Do not throw; continue with the rest to avoid blocking assignments
+            }
+          } else {
+            console.warn('Revenue update failed (PATCH):', e);
+            // Do not throw; continue with the rest to avoid blocking assignments
+          }
+        }
+      }
+
+      // 4) Add expense (optional)
       if (editFormData.expense_amount && editFormData.trip_id) {
         await axiosAuth.post("/expenses/", {
           trip_id: editFormData.trip_id,
@@ -70,11 +109,18 @@ const AdminDashboard = () => {
           description: editFormData.expense_description,
         });
       }
-      if (editFormData.commission_rate !== undefined && editFormData.trip_id && String(editFormData.commission_rate).trim() !== "") {
+
+      // 5) Update commission rate (optional)
+      if (
+        editFormData.commission_rate !== undefined &&
+        editFormData.trip_id &&
+        String(editFormData.commission_rate).trim() !== ""
+      ) {
         await axiosAuth.put(`/commissions/${editFormData.trip_id}`, null, {
           params: { rate_percent: parseFloat(editFormData.commission_rate) },
         });
       }
+
       setEditRowId(null);
       setEditFormData({});
       fetchOrders();
