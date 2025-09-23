@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axiosAuth from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
+import Pagination from "../../components/Pagination";
 
 const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -17,6 +18,8 @@ const AdminOrdersPage = () => {
   const [endDate, setEndDate] = useState("");
   const [vehicleFilter, setVehicleFilter] = useState("");
   const [quickRange, setQuickRange] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [createForm, setCreateForm] = useState({
     order_number: "",
     invoice_number: "",
@@ -138,6 +141,7 @@ const AdminOrdersPage = () => {
       });
     }
     setFilteredOrders(data);
+    setPage(1);
   };
 
   const handleStartDateChange = (e) => {
@@ -203,7 +207,13 @@ const AdminOrdersPage = () => {
     setVehicleFilter("");
     setQuickRange("");
     setFilteredOrders(orders);
+    setPage(1);
   };
+
+  const pagedOrders = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return filteredOrders.slice(start, start + perPage);
+  }, [filteredOrders, page, perPage]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -415,9 +425,9 @@ const AdminOrdersPage = () => {
       </div>
 
       <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-        <div className="min-w-[1100px]">
+        <div className="min-w-[1100px] max-h-[70vh] overflow-auto">
         <table className="w-full table-auto text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-white">
             <tr className="text-left border-b bg-gray-100 text-gray-600">
               <th className="py-2 px-4">Date</th>
               <th className="py-2 px-4">Order ID</th>
@@ -432,7 +442,7 @@ const AdminOrdersPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.map((order) => {
+            {pagedOrders.map((order) => {
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
                   <td className="py-2 px-4">{order.date ? new Date(order.date).toISOString().slice(0,10) : ""}</td>
@@ -455,6 +465,13 @@ const AdminOrdersPage = () => {
           </tbody>
         </table>
         </div>
+        <Pagination
+          page={page}
+          perPage={perPage}
+          total={filteredOrders.length}
+          onPageChange={setPage}
+          onPerPageChange={setPerPage}
+        />
       </section>
     </div>
   );

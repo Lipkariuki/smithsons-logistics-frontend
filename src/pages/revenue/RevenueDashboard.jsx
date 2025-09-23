@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
 import { Bar } from "react-chartjs-2";
@@ -25,6 +25,12 @@ const RevenueDashboard = () => {
   const [vehicles, setVehicles] = useState([]);
 
   const safeArray = Array.isArray(filtered) ? filtered : [];
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const paged = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return safeArray.slice(start, start + perPage);
+  }, [safeArray, page, perPage]);
 
   const applyFilters = async () => {
     try {
@@ -248,8 +254,9 @@ const RevenueDashboard = () => {
 
       <section className="bg-white shadow rounded-lg p-6 overflow-x-auto">
         <h2 className="text-xl font-semibold mb-4 text-purple-700">Order Revenue Breakdown</h2>
+        <div className="max-h-[70vh] overflow-auto">
         <table className="min-w-full table-auto text-sm text-center">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-white">
             <tr className="text-gray-600 border-b">
               <th className="py-2 px-4">Order #</th>
               <th className="py-2 px-4">Date</th>
@@ -264,7 +271,7 @@ const RevenueDashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {safeArray.map((order) => {
+            {paged.map((order) => {
               const revenue = (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0);
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50">
@@ -290,6 +297,14 @@ const RevenueDashboard = () => {
             </tr>
           </tbody>
         </table>
+        </div>
+        <Pagination
+          page={page}
+          perPage={perPage}
+          total={safeArray.length}
+          onPageChange={setPage}
+          onPerPageChange={setPerPage}
+        />
       </section>
 
       <section className="bg-white shadow rounded-lg p-6">
@@ -310,3 +325,4 @@ const SummaryCard = ({ label, value, color, bold }) => (
 );
 
 export default RevenueDashboard;
+import Pagination from "../../components/Pagination";

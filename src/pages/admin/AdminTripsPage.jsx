@@ -1,13 +1,16 @@
 // src/pages/admin/AdminTripsPage.jsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "../../utils/axiosAuth";
+import Pagination from "../../components/Pagination";
 
 const AdminTripsPage = () => {
   const [trips, setTrips] = useState([]);
   const [expensesMap, setExpensesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   const fetchTrips = async () => {
     try {
@@ -41,6 +44,11 @@ const AdminTripsPage = () => {
     fetchTrips();
   }, []);
 
+  const paged = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return trips.slice(start, start + perPage);
+  }, [trips, page, perPage]);
+
   if (loading) return <p className="p-4">Loading trips...</p>;
   if (error) return <p className="p-4 text-red-500">{error}</p>;
 
@@ -49,8 +57,9 @@ const AdminTripsPage = () => {
       <h1 className="text-2xl font-bold text-purple-700 mb-6">All Trips (Admin)</h1>
 
       <div className="overflow-x-auto bg-white rounded-xl shadow-sm">
+        <div className="max-h-[70vh] overflow-auto">
         <table className="min-w-full text-sm text-left">
-          <thead className="bg-purple-50 text-xs text-gray-600 uppercase">
+          <thead className="sticky top-0 z-10 bg-white text-xs text-gray-600 uppercase">
             <tr>
               <th className="px-4 py-3">Trip ID</th>
               <th className="px-4 py-3">Order #</th>
@@ -65,7 +74,7 @@ const AdminTripsPage = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {trips.map((trip) => (
+            {paged.map((trip) => (
               <tr key={trip.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-900">{trip.id}</td>
                 <td className="px-4 py-3">{trip.order_number || '-'}</td>
@@ -93,7 +102,15 @@ const AdminTripsPage = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
+      <Pagination
+        page={page}
+        perPage={perPage}
+        total={trips.length}
+        onPageChange={setPage}
+        onPerPageChange={setPerPage}
+      />
     </div>
   );
 };

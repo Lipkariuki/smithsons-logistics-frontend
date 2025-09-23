@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
+import Pagination from "../../components/Pagination";
 
 const AdminFleetPage = () => {
   const [owners, setOwners] = useState([]);
@@ -10,6 +11,8 @@ const AdminFleetPage = () => {
   const [q, setQ] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("");
   const [view, setView] = useState("table"); // 'table' | 'grouped'
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   useEffect(() => {
     const load = async () => {
@@ -57,7 +60,12 @@ const AdminFleetPage = () => {
       r.owner_phone?.toLowerCase().includes(qq) ||
       r.owner_email?.toLowerCase().includes(qq)
     );
-  }, [owners, vehicles, q]);
+  }, [owners, vehicles, q, ownerFilter]);
+
+  const pagedRows = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return rows.slice(start, start + perPage);
+  }, [rows, page, perPage]);
 
   const grouped = useMemo(() => {
     const map = new Map();
@@ -155,8 +163,9 @@ const AdminFleetPage = () => {
 
       {view === 'table' ? (
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+          <div className="max-h-[70vh] overflow-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600">
+            <thead className="sticky top-0 z-10 bg-white text-gray-600">
               <tr className="text-left">
                 <th className="px-4 py-2">Owner</th>
                 <th className="px-4 py-2">Phone</th>
@@ -166,7 +175,7 @@ const AdminFleetPage = () => {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, idx) => (
+              {pagedRows.map((r, idx) => (
                 <tr key={`${r.plate}-${idx}`} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2">
                     <button onClick={() => setOwnerFilter(r.owner_id || "")} className="text-purple-700 hover:underline">
@@ -186,6 +195,14 @@ const AdminFleetPage = () => {
               )}
             </tbody>
           </table>
+          </div>
+          <Pagination
+            page={page}
+            perPage={perPage}
+            total={rows.length}
+            onPageChange={setPage}
+            onPerPageChange={setPerPage}
+          />
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm">
