@@ -16,22 +16,14 @@ const AdminTripsPage = () => {
     try {
       const res = await axios.get("/trips/");
       setTrips(res.data);
-
-      // Fetch expenses per trip in parallel
-      const expensesData = await Promise.all(
-        res.data.map((trip) =>
-          axios
-            .get(`/trips/${trip.id}/with-expenses`)
-            .then((r) => ({ id: trip.id, total: r.data.total_expenses }))
-            .catch(() => ({ id: trip.id, total: 0 }))
-        )
-      );
-
-      const map = {};
-      expensesData.forEach((e) => {
-        map[e.id] = e.total;
-      });
-      setExpensesMap(map);
+      // Fetch all expenses totals in a single request
+      try {
+        const totals = await axios.get("/trips/expenses-summary");
+        setExpensesMap(totals.data || {});
+      } catch (e) {
+        // Fallback: empty map if endpoint not available
+        setExpensesMap({});
+      }
     } catch (err) {
       console.error("Error loading trips:", err);
       setError("Could not load trips or expenses.");
