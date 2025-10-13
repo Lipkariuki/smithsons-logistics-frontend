@@ -31,7 +31,9 @@ const AdminOrdersPage = () => {
     truck_plate: "",
     destination: "",
     cases: "",
-    price_per_case: ""
+    price_per_case: "",
+    fuel_litres: "",
+    driver_details: ""
   });
 
   const fetchOrders = () => {
@@ -86,7 +88,14 @@ const AdminOrdersPage = () => {
         ...createForm,
         date: createForm.date || null,
         cases: createForm.cases ? parseInt(createForm.cases) : 0,
-        price_per_case: createForm.price_per_case ? parseFloat(createForm.price_per_case) : 0
+        price_per_case: createForm.price_per_case ? parseFloat(createForm.price_per_case) : 0,
+        fuel_litres: (() => {
+          if (!createForm.fuel_litres) return null;
+          const raw = String(createForm.fuel_litres).replace(/[^\d.]/g, "");
+          const val = raw ? parseFloat(raw) : NaN;
+          return Number.isFinite(val) ? val : null;
+        })(),
+        driver_details: createForm.driver_details?.trim() || null
       };
 
       await axiosAuth.post("/orders/", payload);
@@ -101,7 +110,9 @@ const AdminOrdersPage = () => {
         truck_plate: "",
         destination: "",
         cases: "",
-        price_per_case: ""
+        price_per_case: "",
+        fuel_litres: "",
+        driver_details: ""
       });
       setShowCreateForm(false);
       fetchOrders();
@@ -321,6 +332,22 @@ const AdminOrdersPage = () => {
             onChange={handleCreateChange}
             className="p-2 border rounded"
           />
+          <input
+            type="text"
+            name="fuel_litres"
+            placeholder="30 litres"
+            value={createForm.fuel_litres}
+            onChange={handleCreateChange}
+            className="p-2 border rounded"
+          />
+          <input
+            type="text"
+            name="driver_details"
+            placeholder="Martin 07231208321"
+            value={createForm.driver_details}
+            onChange={handleCreateChange}
+            className="p-2 border rounded"
+          />
           <select
             name="truck_plate"
             value={createForm.truck_plate}
@@ -401,6 +428,8 @@ const AdminOrdersPage = () => {
             total_amount: o.total_amount,
             revenue: (o.total_amount || 0) - (o.expenses || 0) - (o.commission || 0),
             trip_id: o.trip_id,
+            fuel_litres: o.fuel_litres,
+            driver_details: o.driver_details,
           }))}
           headers={[
             { label: "Order ID", key: "id" },
@@ -416,6 +445,8 @@ const AdminOrdersPage = () => {
             { label: "Total Amount", key: "total_amount" },
             { label: "Revenue", key: "revenue" },
             { label: "Trip ID", key: "trip_id" },
+            { label: "Fuel (L)", key: "fuel_litres" },
+            { label: "Driver Details", key: "driver_details" },
           ]}
           filename="orders_export.csv"
           className="bg-blue-600 text-white px-3 py-2 rounded"
