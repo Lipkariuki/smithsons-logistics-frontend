@@ -7,6 +7,17 @@ const currency = new Intl.NumberFormat("en-KE", { style: "currency", currency: "
 const formatMoney = (value) => currency.format(Number(value || 0));
 
 const ReportsPage = () => {
+  const normalizePhone = (phone) => {
+    if (!phone) return "";
+    const p = phone.replace(/\s|-/g, "");
+    if (p.startsWith("+")) return p;
+    if (p.startsWith("0") && p.length === 10) return `+254${p.slice(1)}`;
+    if (p.startsWith("254") && p.length === 12) return `+${p}`;
+    return p;
+  };
+
+  const ALLOWED_PHONE = "+254722760992";
+
   const today = useMemo(() => new Date(), []);
   const defaultStart = useMemo(() => {
     const base = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -26,15 +37,33 @@ const ReportsPage = () => {
   const fileInputRef = useRef(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [authorized, setAuthorized] = useState(null);
 
   useEffect(() => {
     axiosAuth
-      .get("/users/", { params: { role: "owner" } })
-      .then((res) => setOwners(res.data || []))
-      .catch(() => {});
+      .get("/users/me")
+      .then((res) => {
+        const allowed = normalizePhone(res.data?.phone) === ALLOWED_PHONE;
+        setAuthorized(allowed);
+        if (allowed) {
+          axiosAuth
+            .get("/users/", { params: { role: "owner" } })
+            .then((resp) => setOwners(resp.data || []))
+            .catch(() => {});
+          fetchReports(true);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        setAuthorized(false);
+        setLoading(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchReports = () => {
+  const fetchReports = (skipAuthCheck = false) => {
+    if (!skipAuthCheck && !authorized) return;
     const params = new URLSearchParams();
     if (selectedOwner) params.set("owner_id", selectedOwner);
     if (startDate) params.set("start_date", startDate);
@@ -51,11 +80,6 @@ const ReportsPage = () => {
       .catch((err) => setError(err.response?.data?.detail || "Failed to load reports"))
       .finally(() => setLoading(false));
   };
-
-  useEffect(() => {
-    fetchReports();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleSendReport = (vehicleId) => {
     setError("");
@@ -127,6 +151,23 @@ const ReportsPage = () => {
   }, [reports, page, perPage]);
 
   const templateUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/reconciliation/template`;
+
+  if (authorized === null) {
+    return (
+      <div className="p-6">
+        <p className="text-sm text-gray-500">Checking access…</p>
+      </div>
+    );
+  }
+
+  if (!authorized) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-semibold text-purple-700 mb-2">Reports</h1>
+        <p className="text-sm text-gray-600">You do not have access to this page.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

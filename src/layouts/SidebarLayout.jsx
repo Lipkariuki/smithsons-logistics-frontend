@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
   import {
     Home,
@@ -14,9 +14,42 @@ import { NavLink, Outlet } from "react-router-dom";
     Users
   } from "lucide-react";
 import { Calculator as CalculatorIcon } from "lucide-react";
+import axiosAuth from "../utils/axiosAuth";
+
+const normalizePhone = (phone) => {
+  if (!phone) return "";
+  const p = phone.replace(/\s|-/g, "");
+  if (p.startsWith("+")) return p;
+  if (p.startsWith("0") && p.length === 10) return `+254${p.slice(1)}`;
+  if (p.startsWith("254") && p.length === 12) return `+${p}`;
+  return p;
+};
+
+const REPORTS_WHITELIST = "+254722760992";
 
 const SidebarLayout = () => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    axiosAuth
+      .get("/users/me")
+      .then((res) => {
+        if (mounted) setCurrentUser(res.data);
+      })
+      .catch(() => {
+        if (mounted) setCurrentUser(null);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const canSeeReports = useMemo(() => {
+    if (!currentUser?.phone) return false;
+    return normalizePhone(currentUser.phone) === REPORTS_WHITELIST;
+  }, [currentUser]);
 
   const menuItems = [
     { name: "Revenue", icon: <Wallet size={18} />, path: "/admin/finance" },
@@ -25,7 +58,9 @@ const SidebarLayout = () => {
     { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
     { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
     { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
-    { name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" },
+    ...(canSeeReports
+      ? [{ name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" }]
+      : []),
     // { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
   ];
 
