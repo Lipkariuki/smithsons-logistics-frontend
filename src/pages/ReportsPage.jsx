@@ -49,7 +49,7 @@ const ReportsPage = () => {
         setAuthorized(allowed);
         if (allowed) {
           axiosAuth
-            .get("/users/", { params: { role: "owner" } })
+            .get("/users/", { params: { role: "owner,admin" } })
             .then((resp) => setOwners(resp.data || []))
             .catch(() => {});
           axiosAuth

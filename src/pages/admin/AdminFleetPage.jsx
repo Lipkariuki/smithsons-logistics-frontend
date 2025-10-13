@@ -19,7 +19,7 @@ const AdminFleetPage = () => {
       try {
         setLoading(true);
         const [ownersRes, vehiclesRes] = await Promise.all([
-          axios.get("/users/", { params: { role: "owner" } }),
+          axios.get("/users/", { params: { role: "owner,admin" } }),
           axios.get("/vehicles/")
         ]);
         setOwners(Array.isArray(ownersRes.data) ? ownersRes.data : []);
