@@ -28,6 +28,7 @@ const ReportsPage = () => {
   const [owners, setOwners] = useState([]);
   const [reports, setReports] = useState([]);
   const [selectedOwner, setSelectedOwner] = useState("");
+  const [truckFilter, setTruckFilter] = useState("");
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,7 @@ const ReportsPage = () => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [authorized, setAuthorized] = useState(null);
+  const [vehicles, setVehicles] = useState([]);
 
   useEffect(() => {
     axiosAuth
@@ -49,6 +51,10 @@ const ReportsPage = () => {
           axiosAuth
             .get("/users/", { params: { role: "owner" } })
             .then((resp) => setOwners(resp.data || []))
+            .catch(() => {});
+          axiosAuth
+            .get("/vehicles/")
+            .then((resp) => setVehicles(resp.data || []))
             .catch(() => {});
           fetchReports(true);
         } else {
@@ -66,6 +72,7 @@ const ReportsPage = () => {
     if (!skipAuthCheck && !authorized) return;
     const params = new URLSearchParams();
     if (selectedOwner) params.set("owner_id", selectedOwner);
+    if (truckFilter.trim()) params.set("vehicle_plate", truckFilter.trim());
     if (startDate) params.set("start_date", startDate);
     if (endDate) params.set("end_date", endDate);
     setLoading(true);
@@ -232,6 +239,22 @@ const ReportsPage = () => {
             </select>
           </div>
           <div className="flex flex-col">
+            <label className="text-xs text-gray-500">Truck registration</label>
+            <input
+              type="text"
+              value={truckFilter}
+              onChange={(e) => setTruckFilter(e.target.value.toUpperCase())}
+              placeholder="e.g. KDK766A"
+              className="border rounded px-3 py-2 uppercase"
+              list="report-truck-plates"
+            />
+            <datalist id="report-truck-plates">
+              {vehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.plate_number} />
+              ))}
+            </datalist>
+          </div>
+          <div className="flex flex-col">
             <label className="text-xs text-gray-500">Start date</label>
             <input
               type="date"
@@ -260,10 +283,11 @@ const ReportsPage = () => {
             <button
               onClick={() => {
                 setSelectedOwner("");
+                setTruckFilter("");
                 setStartDate(defaultStart);
                 setEndDate(defaultEnd);
                 setPage(1);
-                fetchReports();
+                setTimeout(() => fetchReports(), 0);
               }}
               className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-100"
             >
