@@ -152,6 +152,14 @@ const ReportsPage = () => {
 
   const templateUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/reconciliation/template`;
 
+  const downloadPdf = (vehicleId) => {
+    const params = new URLSearchParams();
+    if (startDate) params.set("start_date", startDate);
+    if (endDate) params.set("end_date", endDate);
+    const url = `${import.meta.env.VITE_API_BASE_URL}/reports/pdf/${vehicleId}?${params.toString()}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   if (authorized === null) {
     return (
       <div className="p-6">
@@ -314,6 +322,12 @@ const ReportsPage = () => {
                       className="text-sm text-white bg-blue-600 px-3 py-1.5 rounded hover:bg-blue-700"
                     >
                       Send report
+                    </button>
+                    <button
+                      onClick={() => downloadPdf(row.vehicle_id)}
+                      className="mt-2 text-sm text-purple-700 border border-purple-200 px-3 py-1.5 rounded hover:bg-purple-50 w-full"
+                    >
+                      Download PDF
                     </button>
                   </td>
                 </tr>
