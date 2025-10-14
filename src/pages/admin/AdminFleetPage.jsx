@@ -3,35 +3,71 @@ import axios from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
 import Pagination from "../../components/Pagination";
 
+const ADMIN_PHONE = "+254722760992";
+
+const normalizePhone = (phone) => {
+  if (!phone) return "";
+  const p = phone.replace(/\s|-/g, "");
+  if (p.startsWith("+")) return p;
+  if (p.startsWith("0") && p.length === 10) return `+254${p.slice(1)}`;
+  if (p.startsWith("254") && p.length === 12) return `+${p}`;
+  return p;
+};
+
 const AdminFleetPage = () => {
   const [owners, setOwners] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
   const [q, setQ] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("");
   const [view, setView] = useState("table"); // 'table' | 'grouped'
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [canManage, setCanManage] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    plate_number: "",
+    owner_id: "",
+    size: "",
+  });
+  const [editVehicle, setEditVehicle] = useState(null);
+
+  const loadFleet = async (includeAdminOwners = false) => {
+    try {
+      setLoading(true);
+      const roleParam = includeAdminOwners ? "owner,admin" : "owner";
+      const [ownersRes, vehiclesRes] = await Promise.all([
+        axios.get("/users/", { params: { role: roleParam } }),
+        axios.get("/vehicles/"),
+      ]);
+      setOwners(Array.isArray(ownersRes.data) ? ownersRes.data : []);
+      setVehicles(Array.isArray(vehiclesRes.data) ? vehiclesRes.data : []);
+    } catch (e) {
+      console.error("Failed to load fleet:", e);
+      setError("Could not load owners or vehicles.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
+    let mounted = true;
+    const init = async () => {
       try {
-        setLoading(true);
-        const [ownersRes, vehiclesRes] = await Promise.all([
-          axios.get("/users/", { params: { role: "owner,admin" } }),
-          axios.get("/vehicles/")
-        ]);
-        setOwners(Array.isArray(ownersRes.data) ? ownersRes.data : []);
-        setVehicles(Array.isArray(vehiclesRes.data) ? vehiclesRes.data : []);
-      } catch (e) {
-        console.error("Failed to load fleet:", e);
-        setError("Could not load owners or vehicles.");
-      } finally {
-        setLoading(false);
+        const me = await axios.get("/users/me");
+        if (!mounted) return;
+        const allowed = normalizePhone(me.data?.phone) === ADMIN_PHONE;
+        setCanManage(allowed);
+        await loadFleet(allowed);
+      } catch {
+        await loadFleet(false);
       }
     };
-    load();
+    init();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const rows = useMemo(() => {
@@ -39,6 +75,7 @@ const AdminFleetPage = () => {
     const list = vehicles.map(v => {
       const o = ownersById.get(v.owner_id) || {};
       return {
+        id: v.id,
         plate: v.plate_number,
         size: v.size || "",
         owner_name: o.name || "",
@@ -93,6 +130,67 @@ const AdminFleetPage = () => {
     { label: "Size", key: "size" },
   ];
 
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setActionMessage("");
+      const payload = {
+        plate_number: createForm.plate_number.trim().toUpperCase(),
+        owner_id: Number(createForm.owner_id),
+        size: createForm.size.trim().toUpperCase() || null,
+      };
+      if (!payload.plate_number || !payload.owner_id) {
+        setActionMessage("Plate and owner are required.");
+        return;
+      }
+      await axios.post("/vehicles/", payload);
+      setCreateForm({ plate_number: "", owner_id: "", size: "" });
+      await loadFleet(true);
+      setActionMessage("Vehicle added successfully.");
+    } catch (err) {
+      const message =
+        err.response?.data?.detail ||
+        err.message ||
+        "Failed to add vehicle.";
+      setActionMessage(message);
+    }
+  };
+
+  const startEdit = (vehicle) => {
+    setEditVehicle({
+      id: vehicle.id,
+      plate_number: vehicle.plate_number,
+      owner_id: vehicle.owner_id || "",
+      size: vehicle.size || "",
+    });
+    setActionMessage("");
+  };
+
+  const cancelEdit = () => {
+    setEditVehicle(null);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editVehicle) return;
+    try {
+      const payload = {
+        plate_number: editVehicle.plate_number.trim().toUpperCase(),
+        owner_id: Number(editVehicle.owner_id) || null,
+        size: editVehicle.size.trim().toUpperCase() || null,
+      };
+      await axios.put(`/vehicles/${editVehicle.id}`, payload);
+      setEditVehicle(null);
+      await loadFleet(true);
+      setActionMessage("Vehicle updated successfully.");
+    } catch (err) {
+      const message =
+        err.response?.data?.detail ||
+        err.message ||
+        "Failed to update vehicle.";
+      setActionMessage(message);
+    }
+  };
+
   if (loading) return <div className="p-6">Loading fleet…</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
@@ -145,6 +243,64 @@ const AdminFleetPage = () => {
         </div>
       </div>
 
+      {canManage && (
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-4 space-y-3">
+          <h2 className="text-lg font-semibold text-purple-700">Add Vehicle</h2>
+          {actionMessage && (
+            <div className="text-sm text-purple-700">{actionMessage}</div>
+          )}
+          <form
+            onSubmit={handleCreateSubmit}
+            className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm"
+          >
+            <input
+              value={createForm.plate_number}
+              onChange={(e) =>
+                setCreateForm((prev) => ({
+                  ...prev,
+                  plate_number: e.target.value.toUpperCase(),
+                }))
+              }
+              placeholder="Plate number"
+              className="border rounded px-3 py-2 uppercase"
+              required
+            />
+            <select
+              value={createForm.owner_id}
+              onChange={(e) =>
+                setCreateForm((prev) => ({ ...prev, owner_id: e.target.value }))
+              }
+              className="border rounded px-3 py-2"
+              required
+            >
+              <option value="">Select owner</option>
+              {owners
+                .slice()
+                .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+                .map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name} {o.phone ? `(${o.phone})` : ""}
+                  </option>
+                ))}
+            </select>
+            <input
+              value={createForm.size}
+              onChange={(e) =>
+                setCreateForm((prev) => ({ ...prev, size: e.target.value }))
+              }
+              placeholder="Size (e.g. 30T)"
+              className="border rounded px-3 py-2 uppercase"
+            />
+            <button
+              type="submit"
+              className="bg-green-600 text-white px-4 py-2 rounded self-start"
+            >
+              Save Vehicle
+            </button>
+          </form>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-3">
         <span className="text-sm text-gray-600">View:</span>
         <button
@@ -172,25 +328,113 @@ const AdminFleetPage = () => {
                 <th className="px-4 py-2">Email</th>
                 <th className="px-4 py-2">Vehicle Plate</th>
                 <th className="px-4 py-2">Size</th>
+                {canManage && <th className="px-4 py-2">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {pagedRows.map((r, idx) => (
                 <tr key={`${r.plate}-${idx}`} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2">
-                    <button onClick={() => setOwnerFilter(r.owner_id || "")} className="text-purple-700 hover:underline">
-                      {r.owner_name || <span className="text-gray-400">—</span>}
-                    </button>
+                    {editVehicle && editVehicle.id === r.id ? (
+                      <select
+                        value={editVehicle.owner_id}
+                        onChange={(e) =>
+                          setEditVehicle((prev) => ({
+                            ...prev,
+                            owner_id: e.target.value,
+                          }))
+                        }
+                        className="border rounded px-2 py-1"
+                      >
+                        <option value="">No owner</option>
+                        {owners
+                          .slice()
+                          .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+                          .map((o) => (
+                            <option key={o.id} value={o.id}>
+                              {o.name} {o.phone ? `(${o.phone})` : ""}
+                            </option>
+                          ))}
+                      </select>
+                    ) : (
+                      <button onClick={() => setOwnerFilter(r.owner_id || "")} className="text-purple-700 hover:underline">
+                        {r.owner_name || <span className="text-gray-400">—</span>}
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 py-2">{r.owner_phone || <span className="text-gray-400">—</span>}</td>
                   <td className="px-4 py-2">{r.owner_email || <span className="text-gray-400">—</span>}</td>
-                  <td className="px-4 py-2 font-medium">{r.plate}</td>
-                  <td className="px-4 py-2">{r.size}</td>
+                  <td className="px-4 py-2 font-medium uppercase">
+                    {editVehicle && editVehicle.id === r.id ? (
+                      <input
+                        value={editVehicle.plate_number}
+                        onChange={(e) =>
+                          setEditVehicle((prev) => ({
+                            ...prev,
+                            plate_number: e.target.value.toUpperCase(),
+                          }))
+                        }
+                        className="border rounded px-2 py-1 uppercase w-28"
+                      />
+                    ) : (
+                      r.plate
+                    )}
+                  </td>
+                  <td className="px-4 py-2 uppercase">
+                    {editVehicle && editVehicle.id === r.id ? (
+                      <input
+                        value={editVehicle.size}
+                        onChange={(e) =>
+                          setEditVehicle((prev) => ({
+                            ...prev,
+                            size: e.target.value,
+                          }))
+                        }
+                        className="border rounded px-2 py-1 uppercase w-24"
+                      />
+                    ) : (
+                      r.size
+                    )}
+                  </td>
+                  {canManage && (
+                    <td className="px-4 py-2 space-x-2">
+                      {editVehicle && editVehicle.id === r.id ? (
+                        <>
+                          <button
+                            onClick={handleEditSubmit}
+                            className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="border px-2 py-1 rounded text-xs"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            startEdit({
+                              id: r.id,
+                              plate_number: r.plate,
+                              owner_id: r.owner_id || "",
+                              size: r.size,
+                            })
+                          }
+                          className="text-blue-600 text-xs"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td className="px-4 py-6 text-center text-gray-500" colSpan={5}>No results.</td>
+                  <td className="px-4 py-6 text-center text-gray-500" colSpan={canManage ? 6 : 5}>No results.</td>
                 </tr>
               )}
             </tbody>

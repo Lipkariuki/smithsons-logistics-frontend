@@ -4,9 +4,10 @@ import Pagination from "../components/Pagination";
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
+  const [totalRows, setTotalRows] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState({ amount: "", description: "" });
-  const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const [showForm, setShowForm] = useState(false);
   const [mode, setMode] = useState("order"); // 'order' or 'trip'
   const [formData, setFormData] = useState({
@@ -22,11 +23,17 @@ const ExpensesPage = () => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
 
-  const fetchExpenses = () => {
-    axios
-      .get("/expenses/")
-      .then((res) => { setExpenses(res.data); setPage(1); })
-      .catch((err) => console.error("Failed to fetch expenses:", err));
+  const loadExpenses = async (pageValue = page, perPageValue = perPage) => {
+    try {
+      const res = await axios.get("/expenses/", {
+        params: { page: pageValue, per_page: perPageValue },
+      });
+      setExpenses(res.data.items || []);
+      setTotalRows(res.data.total || 0);
+      setTotalAmount(res.data.total_amount || 0);
+    } catch (err) {
+      console.error("Failed to fetch expenses:", err);
+    }
   };
 
   const startEdit = (exp) => {
@@ -46,7 +53,7 @@ const ExpensesPage = () => {
         description: editDraft.description,
       });
       cancelEdit();
-      fetchExpenses();
+      loadExpenses();
     } catch (e) {
       console.error("Failed to update expense:", e);
     }
@@ -55,7 +62,7 @@ const ExpensesPage = () => {
   const deleteExpense = async (id) => {
     try {
       await axios.delete(`/expenses/${id}`);
-      fetchExpenses();
+      loadExpenses();
     } catch (e) {
       console.error("Failed to delete expense:", e);
     }
@@ -110,7 +117,12 @@ const ExpensesPage = () => {
       await axios.post("/expenses/", payload);
       setFormData({ order_number: "", trip_id: "", amount: "", description: "" });
       setShowForm(false);
-      fetchExpenses();
+      if (page !== 1) {
+        setPage(1);
+        // loadExpenses will be triggered by effect
+      } else {
+        loadExpenses(1, perPage);
+      }
     } catch (err) {
       console.error("Failed to submit expense:", err);
       const reason = err.response?.data?.detail || err.message || "Unknown error";
@@ -119,13 +131,12 @@ const ExpensesPage = () => {
   };
 
   useEffect(() => {
-    fetchExpenses();
-  }, []);
+    loadExpenses(page, perPage);
+  }, [page, perPage]);
 
   const pagedExpenses = useMemo(() => {
-    const start = (page - 1) * perPage;
-    return expenses.slice(start, start + perPage);
-  }, [expenses, page, perPage]);
+    return expenses;
+  }, [expenses]);
 
   useEffect(() => {
     if (!(showForm && mode === "order")) return;
@@ -246,10 +257,15 @@ const ExpensesPage = () => {
 
       <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
         <div className="flex justify-between items-center mb-3 text-sm text-gray-700">
-          <span>Total expenses: <span className="font-semibold">{total.toLocaleString()} KES</span></span>
-          <span>Rows: {expenses.length}</span>
+          <span>
+            Total expenses:{" "}
+            <span className="font-semibold">
+              {Number(totalAmount || 0).toLocaleString()} KES
+            </span>
+          </span>
+          <span>Rows: {totalRows}</span>
         </div>
-        {expenses.length > 0 ? (
+        {pagedExpenses.length > 0 ? (
           <div className="max-h-[70vh] overflow-auto">
           <table className="min-w-full table-auto text-sm">
             <thead className="sticky top-0 z-10 bg-white text-left text-gray-600">
@@ -273,18 +289,18 @@ const ExpensesPage = () => {
                     {editingId === exp.id ? (
                       <input type="number" className="border rounded px-2 py-1 w-28" value={editDraft.amount} onChange={(e)=>setEditDraft({...editDraft, amount: e.target.value})} />
                     ) : (
-                      exp.amount.toLocaleString()
+                      Number(exp.amount || 0).toLocaleString()
                     )}
                   </td>
                   <td className="py-2 px-4">
                     {editingId === exp.id ? (
                       <input type="text" className="border rounded px-2 py-1" value={editDraft.description} onChange={(e)=>setEditDraft({...editDraft, description: e.target.value})} />
                     ) : (
-                      exp.description
+                      exp.description || "-"
                     )}
                   </td>
                   <td className="py-2 px-4">
-                    {new Date(exp.timestamp).toLocaleString()}
+                    {exp.timestamp ? new Date(exp.timestamp).toLocaleString() : "-"}
                   </td>
                   <td className="py-2 px-4 space-x-2">
                     {editingId === exp.id ? (
@@ -307,11 +323,11 @@ const ExpensesPage = () => {
         ) : (
           <p className="text-gray-500 text-sm">No expenses found.</p>
         )}
-        {expenses.length > 0 && (
+        {totalRows > 0 && (
           <Pagination
             page={page}
             perPage={perPage}
-            total={expenses.length}
+            total={totalRows}
             onPageChange={setPage}
             onPerPageChange={setPerPage}
           />
