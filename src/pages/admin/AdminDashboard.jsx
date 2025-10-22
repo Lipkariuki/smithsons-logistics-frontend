@@ -57,6 +57,21 @@ const AdminDashboard = () => {
     return orders.slice(start, start + perPage);
   }, [orders, page, perPage]);
 
+  const summary = useMemo(() => {
+    const totals = orders.reduce(
+      (acc, order) => {
+        acc.tripRevenue += Number(order.total_amount || 0);
+        acc.expenses += Number(order.expenses || 0);
+        acc.commission += Number(order.commission || 0);
+        acc.fuelLitres += Number(order.fuel_litres || 0);
+        return acc;
+      },
+      { tripRevenue: 0, expenses: 0, commission: 0, fuelLitres: 0 }
+    );
+    totals.netRevenue = totals.tripRevenue - totals.expenses - totals.commission;
+    return totals;
+  }, [orders]);
+
   const handleSaveClick = async (orderId) => {
     try {
       setError("");
@@ -166,6 +181,24 @@ const AdminDashboard = () => {
         }
       }
 
+      // 6) Update fuel litres if changed
+      if (editFormData.fuel_litres !== undefined) {
+        const cleanedFuel = String(editFormData.fuel_litres || "").trim();
+        const parsedFuel =
+          cleanedFuel === "" ? null : parseFloat(cleanedFuel.replace(/,/g, ""));
+        const normalizedFuel =
+          parsedFuel === null || Number.isNaN(parsedFuel) ? null : parsedFuel;
+        const originalFuel =
+          original.fuel_litres === null || original.fuel_litres === undefined
+            ? null
+            : Number(original.fuel_litres);
+        if (normalizedFuel !== originalFuel) {
+          await axiosAuth.patch(`/orders/${orderId}`, {
+            fuel_litres: normalizedFuel,
+          });
+        }
+      }
+
       setEditRowId(null);
       setEditFormData({});
       fetchOrders();
@@ -191,6 +224,7 @@ const AdminDashboard = () => {
       commission_rate: "",
       trip_id: order.trip_id,
       revenue_amount: order.total_amount ?? "",
+      fuel_litres: order.fuel_litres ?? "",
     });
   };
 
@@ -225,6 +259,25 @@ const AdminDashboard = () => {
             {error}
           </div>
         )}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+            <h3 className="text-sm text-gray-500">Trip Revenue</h3>
+            <p className="text-2xl font-semibold text-purple-700">{summary.tripRevenue.toLocaleString()} KES</p>
+          </div>
+          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+            <h3 className="text-sm text-gray-500">Expenses</h3>
+            <p className="text-2xl font-semibold text-red-600">{summary.expenses.toLocaleString()} KES</p>
+          </div>
+          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+            <h3 className="text-sm text-gray-500">Net Revenue</h3>
+            <p className="text-2xl font-semibold text-green-600">{summary.netRevenue.toLocaleString()} KES</p>
+          </div>
+          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+            <h3 className="text-sm text-gray-500">Fuel Allocation</h3>
+            <p className="text-2xl font-semibold text-blue-600">{summary.fuelLitres.toLocaleString()} L</p>
+          </div>
+        </section>
+
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link to="/admin/finance" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
             <h3 className="text-lg font-bold text-gray-800">Financial Dashboard</h3>
@@ -252,6 +305,7 @@ const AdminDashboard = () => {
             <th className="py-2 px-4">Invoice</th>
             <th className="py-2 px-4">Product</th>
             <th className="py-2 px-4">Destination</th>
+            <th className="py-2 px-4">Fuel (L)</th>
             <th className="py-2 px-4">Driver</th>
             <th className="py-2 px-4">Vehicle</th>
             <th className="py-2 px-4">Trip Revenue</th>
@@ -293,6 +347,20 @@ const AdminDashboard = () => {
                         />
                       ) : (
                         order.destination
+                      )}
+                    </td>
+                    <td className="py-2 px-4">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="e.g. 120"
+                          value={editFormData.fuel_litres ?? ""}
+                          onChange={(e) => setEditFormData({ ...editFormData, fuel_litres: e.target.value })}
+                          className="border rounded px-3 py-1 w-24"
+                        />
+                      ) : (
+                        Number(order.fuel_litres || 0).toLocaleString()
                       )}
                     </td>
                     <td className="py-2 px-4">
