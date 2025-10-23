@@ -140,7 +140,8 @@ const ReportsPage = () => {
       (acc, row) => {
         acc.trips += row.trip_count || 0;
         acc.gross += row.gross_revenue || 0;
-        acc.fuel += row.fuel_cost || 0;
+        acc.fuelCost += row.fuel_cost || 0;
+        acc.fuelLitres += row.fuel_litres_total || 0;
         acc.other += row.other_expenses || 0;
         acc.extra += row.extra_expenses || 0;
         acc.commission += row.commission || 0;
@@ -148,7 +149,7 @@ const ReportsPage = () => {
         acc.actual += row.actual_payment || 0;
         return acc;
       },
-      { trips: 0, gross: 0, fuel: 0, other: 0, extra: 0, commission: 0, net: 0, actual: 0 }
+      { trips: 0, gross: 0, fuelCost: 0, fuelLitres: 0, other: 0, extra: 0, commission: 0, net: 0, actual: 0 }
     );
   }, [reports]);
 
@@ -217,6 +218,25 @@ const ReportsPage = () => {
           </label>
         </div>
       </div>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+          <h3 className="text-sm text-gray-500">Gross Revenue</h3>
+          <p className="text-2xl font-semibold text-purple-700">{formatMoney(totals.gross)}</p>
+        </div>
+        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+          <h3 className="text-sm text-gray-500">Net Revenue</h3>
+          <p className="text-2xl font-semibold text-green-700">{formatMoney(totals.net)}</p>
+        </div>
+        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+          <h3 className="text-sm text-gray-500">Fuel Cost</h3>
+          <p className="text-2xl font-semibold text-red-600">{formatMoney(totals.fuelCost)}</p>
+        </div>
+        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+          <h3 className="text-sm text-gray-500">Fuel Allocation</h3>
+          <p className="text-2xl font-semibold text-blue-600">{Number(totals.fuelLitres || 0).toLocaleString()} L</p>
+        </div>
+      </section>
 
       <section className="bg-white rounded-xl shadow p-4 space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-end gap-3">
@@ -307,7 +327,8 @@ const ReportsPage = () => {
               <th className="px-4 py-2 text-left">Owner</th>
               <th className="px-4 py-2 text-right">Trips</th>
               <th className="px-4 py-2 text-right">Gross</th>
-              <th className="px-4 py-2 text-right">Fuel</th>
+              <th className="px-4 py-2 text-right">Fuel Cost</th>
+              <th className="px-4 py-2 text-right">Fuel (L)</th>
               <th className="px-4 py-2 text-right">Expenses</th>
               <th className="px-4 py-2 text-right">Extra</th>
               <th className="px-4 py-2 text-right">Commission</th>
@@ -327,6 +348,7 @@ const ReportsPage = () => {
                   <td className="px-4 py-2 text-right">{row.trip_count}</td>
                   <td className="px-4 py-2 text-right">{formatMoney(row.gross_revenue)}</td>
                   <td className="px-4 py-2 text-right">{formatMoney(row.fuel_cost)}</td>
+                  <td className="px-4 py-2 text-right">{Number(row.fuel_litres_total || 0).toLocaleString()}</td>
                   <td className="px-4 py-2 text-right">{formatMoney(row.other_expenses)}</td>
                   <td className="px-4 py-2 text-right">{formatMoney(row.extra_expenses)}</td>
                   <td className="px-4 py-2 text-right">{formatMoney(row.commission)}</td>
@@ -359,7 +381,7 @@ const ReportsPage = () => {
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={13} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={14} className="px-4 py-6 text-center text-gray-500">
                   {loading ? "Loading..." : "No data available for the selected filters."}
                 </td>
               </tr>
@@ -372,7 +394,8 @@ const ReportsPage = () => {
                 <td></td>
                 <td className="px-4 py-2 text-right">{totals.trips}</td>
                 <td className="px-4 py-2 text-right">{formatMoney(totals.gross)}</td>
-                <td className="px-4 py-2 text-right">{formatMoney(totals.fuel)}</td>
+                <td className="px-4 py-2 text-right">{formatMoney(totals.fuelCost)}</td>
+                <td className="px-4 py-2 text-right">{Number(totals.fuelLitres || 0).toLocaleString()}</td>
                 <td className="px-4 py-2 text-right">{formatMoney(totals.other)}</td>
                 <td className="px-4 py-2 text-right">{formatMoney(totals.extra)}</td>
                 <td className="px-4 py-2 text-right">{formatMoney(totals.commission)}</td>
