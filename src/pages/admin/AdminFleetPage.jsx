@@ -3,17 +3,6 @@ import axios from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
 import Pagination from "../../components/Pagination";
 
-const ADMIN_PHONE = "+254722760992";
-
-const normalizePhone = (phone) => {
-  if (!phone) return "";
-  const p = phone.replace(/\s|-/g, "");
-  if (p.startsWith("+")) return p;
-  if (p.startsWith("0") && p.length === 10) return `+254${p.slice(1)}`;
-  if (p.startsWith("254") && p.length === 12) return `+${p}`;
-  return p;
-};
-
 const AdminFleetPage = () => {
   const [owners, setOwners] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -36,9 +25,10 @@ const AdminFleetPage = () => {
   const loadFleet = async (includeAdminOwners = false) => {
     try {
       setLoading(true);
-      const roleParam = includeAdminOwners ? "owner,admin" : "owner";
       const [ownersRes, vehiclesRes] = await Promise.all([
-        axios.get("/users/", { params: { role: roleParam } }),
+        includeAdminOwners
+          ? axios.get("/users/")
+          : axios.get("/users/", { params: { role: "owner" } }),
         axios.get("/vehicles/"),
       ]);
       setOwners(Array.isArray(ownersRes.data) ? ownersRes.data : []);
@@ -57,9 +47,10 @@ const AdminFleetPage = () => {
       try {
         const me = await axios.get("/users/me");
         if (!mounted) return;
-        const allowed = normalizePhone(me.data?.phone) === ADMIN_PHONE;
-        setCanManage(allowed);
-        await loadFleet(allowed);
+        const role = String(me.data?.role || "").toLowerCase();
+        const isAdmin = role === "admin";
+        setCanManage(isAdmin);
+        await loadFleet(isAdmin);
       } catch {
         await loadFleet(false);
       }

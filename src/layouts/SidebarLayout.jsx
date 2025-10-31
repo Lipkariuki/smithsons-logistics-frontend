@@ -16,17 +16,6 @@ import { NavLink, Outlet } from "react-router-dom";
 import { Calculator as CalculatorIcon } from "lucide-react";
 import axiosAuth from "../utils/axiosAuth";
 
-const normalizePhone = (phone) => {
-  if (!phone) return "";
-  const p = phone.replace(/\s|-/g, "");
-  if (p.startsWith("+")) return p;
-  if (p.startsWith("0") && p.length === 10) return `+254${p.slice(1)}`;
-  if (p.startsWith("254") && p.length === 12) return `+${p}`;
-  return p;
-};
-
-const REPORTS_WHITELIST = "+254722760992";
-
 const SidebarLayout = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -46,23 +35,19 @@ const SidebarLayout = () => {
     };
   }, []);
 
-  const canSeeReports = useMemo(() => {
-    if (!currentUser?.phone) return false;
-    return normalizePhone(currentUser.phone) === REPORTS_WHITELIST;
-  }, [currentUser]);
-
-  const menuItems = [
-    { name: "Revenue", icon: <Wallet size={18} />, path: "/admin/finance" },
-    { name: "Platform Earnings", icon: <Wallet size={18} />, path: "/admin/platform-earnings" },
-    { name: "Orders", icon: <FileText size={18} />, path: "/admin/orders" },
-    { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
-    { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
-    { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
-    ...(canSeeReports
-      ? [{ name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" }]
-      : []),
-    // { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
-  ];
+  const menuItems = useMemo(
+    () => [
+      { name: "Revenue", icon: <Wallet size={18} />, path: "/admin/finance" },
+      { name: "Platform Earnings", icon: <Wallet size={18} />, path: "/admin/platform-earnings" },
+      { name: "Orders", icon: <FileText size={18} />, path: "/admin/orders" },
+      { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
+      { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
+      { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
+      { name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" },
+      // { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
+    ],
+    []
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-100 text-[15px]">
