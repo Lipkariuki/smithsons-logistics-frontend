@@ -7,7 +7,7 @@ const FUEL_TYPES = [
   { label: "Diesel", value: "diesel" },
   { label: "Petrol", value: "petrol" },
 ];
-const DEFAULT_FUEL_PRICE = 198.75;
+const DEFAULT_FUEL_PRICE = 171.0;
 
 const AdminDashboard = () => {
   const createInitialFuelState = () => ({
