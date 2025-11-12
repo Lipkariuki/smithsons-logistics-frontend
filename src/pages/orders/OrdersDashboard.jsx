@@ -3,6 +3,20 @@ import axiosAuth from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
 import Pagination from "../../components/Pagination";
 
+const dateOnly = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") {
+    if (value.length >= 10) return value.slice(0, 10);
+    return value;
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d)) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const AdminOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -126,7 +140,7 @@ const AdminOrdersPage = () => {
   // No edit/save/cancel handlers required on this page
 
   const applyFilters = (selStartDate = startDate, selEndDate = endDate, selVehicle = vehicleFilter) => {
-    const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+    const fmt = (d) => dateOnly(d);
     let data = [...orders];
     // Date range filtering (inclusive)
     if (selStartDate) {
@@ -177,39 +191,35 @@ const AdminOrdersPage = () => {
     const value = e.target.value;
     setQuickRange(value);
     const today = new Date();
-    const toISO = (d) => d.toISOString().slice(0, 10);
-    let s = "";
-    let en = "";
+    const nextRange = { start: "", end: "" };
+
     if (value === "today") {
       const d = new Date(today);
-      s = toISO(d);
-      en = toISO(d);
+      nextRange.start = dateOnly(d);
+      nextRange.end = dateOnly(d);
     } else if (value === "last7") {
       const d = new Date(today);
       const sDate = new Date(d);
       sDate.setDate(d.getDate() - 6);
-      s = toISO(sDate);
-      en = toISO(d);
+      nextRange.start = dateOnly(sDate);
+      nextRange.end = dateOnly(d);
     } else if (value === "thisMonth") {
       const d = new Date(today);
       const first = new Date(d.getFullYear(), d.getMonth(), 1);
       const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      s = toISO(first);
-      en = toISO(last);
+      nextRange.start = dateOnly(first);
+      nextRange.end = dateOnly(last);
     } else if (value === "lastMonth") {
       const d = new Date(today);
       const first = new Date(d.getFullYear(), d.getMonth() - 1, 1);
       const last = new Date(d.getFullYear(), d.getMonth(), 0);
-      s = toISO(first);
-      en = toISO(last);
-    } else {
-      // all
-      s = "";
-      en = "";
+      nextRange.start = dateOnly(first);
+      nextRange.end = dateOnly(last);
     }
-    setStartDate(s);
-    setEndDate(en);
-    applyFilters(s, en, vehicleFilter);
+
+    setStartDate(nextRange.start);
+    setEndDate(nextRange.end);
+    applyFilters(nextRange.start, nextRange.end, vehicleFilter);
   };
 
   const handleResetFilters = () => {
@@ -416,7 +426,7 @@ const AdminOrdersPage = () => {
         <CSVLink
           data={filteredOrders.map((o) => ({
             id: o.id,
-            date: o.date ? new Date(o.date).toISOString().slice(0,10) : "",
+            date: dateOnly(o.date),
             order_number: o.order_number,
             invoice_number: o.invoice_number,
             product_description: o.product_description,
@@ -476,7 +486,7 @@ const AdminOrdersPage = () => {
             {pagedOrders.map((order) => {
               return (
                 <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
-                  <td className="py-2 px-4">{order.date ? new Date(order.date).toISOString().slice(0,10) : ""}</td>
+                  <td className="py-2 px-4">{dateOnly(order.date)}</td>
                   <td className="py-2 px-4">{order.id}</td>
                   <td className="py-2 px-4 font-bold text-purple-700">{order.order_number}</td>
                   <td className="py-2 px-4">{order.invoice_number}</td>
