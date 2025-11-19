@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axiosAuth from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
 import Pagination from "../../components/Pagination";
+import { findRateCardRate } from "../../utils/rateCard";
 
 const dateOnly = (value) => {
   if (!value) return "";
@@ -34,6 +35,7 @@ const AdminOrdersPage = () => {
   const [quickRange, setQuickRange] = useState("");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [creatingOrder, setCreatingOrder] = useState(false);
   const [createForm, setCreateForm] = useState({
     order_number: "",
     invoice_number: "",
@@ -49,6 +51,33 @@ const AdminOrdersPage = () => {
     fuel_litres: "",
     driver_details: ""
   });
+
+  const selectedVehicle = useMemo(() => {
+    if (!createForm.truck_plate) return null;
+    const plate = createForm.truck_plate.toUpperCase();
+    return (
+      availableVehicles.find(
+        (v) => String(v.plate_number || "").toUpperCase() === plate
+      ) || null
+    );
+  }, [availableVehicles, createForm.truck_plate]);
+
+  const rateCardMatch = useMemo(() => {
+    if (!createForm.destination || !createForm.product_type || !selectedVehicle?.size) {
+      return null;
+    }
+    return findRateCardRate({
+      destination: createForm.destination,
+      productType: createForm.product_type,
+      vehicleSize: selectedVehicle.size,
+      fallbackText: createForm.product_description || "",
+    });
+  }, [
+    createForm.destination,
+    createForm.product_type,
+    createForm.product_description,
+    selectedVehicle,
+  ]);
 
   const fetchOrders = () => {
     axiosAuth.get("/admin/orders")
@@ -97,9 +126,15 @@ const AdminOrdersPage = () => {
     e.preventDefault();
     setMessage("");
     setError("");
+    if (!rateCardMatch) {
+      setError("Select a valid destination, product type, and vehicle (size) combination that exists on the rate card.");
+      return;
+    }
+    setCreatingOrder(true);
     try {
       const payload = {
         ...createForm,
+        total_amount: rateCardMatch.rate,
         date: createForm.date || null,
         cases: createForm.cases ? parseInt(createForm.cases) : 0,
         price_per_case: createForm.price_per_case ? parseFloat(createForm.price_per_case) : 0,
@@ -134,6 +169,8 @@ const AdminOrdersPage = () => {
     } catch (err) {
       const reason = err.response?.data?.detail || err.message;
       setError(`Failed to create order: ${reason}`);
+    } finally {
+      setCreatingOrder(false);
     }
   };
 
@@ -370,11 +407,39 @@ const AdminOrdersPage = () => {
               <option key={v.id} value={v.plate_number}>{v.plate_number}</option>
             ))}
           </select>
+          <div className="md:col-span-2 border rounded bg-gray-50 p-3 text-sm text-gray-700">
+            <div className="font-semibold text-purple-700 mb-1">Rate card lookup</div>
+            <div>
+              Vehicle size:{" "}
+              <span className="font-medium">
+                {selectedVehicle?.size || "Select a vehicle to determine size"}
+              </span>
+            </div>
+            {selectedVehicle?.size ? (
+              rateCardMatch ? (
+                <div className="mt-2 text-green-700">
+                  {rateCardMatch.rate.toLocaleString(undefined, { maximumFractionDigits: 2 })} KES ·{" "}
+                  {rateCardMatch.entry.laneDescription}
+                </div>
+              ) : (
+                <div className="mt-2 text-red-600">
+                  No rate card match for the selected destination, product, and vehicle size.
+                </div>
+              )
+            ) : (
+              <div className="mt-2 text-gray-500">
+                Choose a truck/van to evaluate the applicable lane rate.
+              </div>
+            )}
+          </div>
           <button
             type="submit"
-            className="col-span-1 md:col-span-2 bg-green-600 text-white p-2 rounded hover:bg-green-700"
+            disabled={creatingOrder || !rateCardMatch}
+            className={`col-span-1 md:col-span-2 bg-green-600 text-white p-2 rounded transition ${
+              creatingOrder || !rateCardMatch ? "opacity-60 cursor-not-allowed" : "hover:bg-green-700"
+            }`}
           >
-            Submit Order
+            {creatingOrder ? "Creating..." : "Submit Order"}
           </button>
         </form>
       )}
