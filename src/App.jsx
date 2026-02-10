@@ -16,6 +16,8 @@ import DriverExpensesPage from "./pages/driver/DriverExpensesPage";
 
 import ExpensesPage from "./pages/ExpensesPage";
 import ReportsPage from "./pages/ReportsPage";
+import ReportsHub from "./pages/reports/ReportsHub";
+import DhlReportsPage from "./pages/reports/DhlReportsPage";
 import RevenueDashboard from "./pages/revenue/RevenueDashboard";
 import AdminEarningsDashboard from "./pages/AdminEarnings";
 import PlatformEarningsComingSoon from "./pages/admin/PlatformEarningsComingSoon";
@@ -39,7 +41,9 @@ const App = () => {
         <Route path="trips" element={<AdminTripsPage />} />
         <Route path="fleet" element={<AdminFleetPage />} />
         <Route path="expenses" element={<ExpensesPage />} />
-        <Route path="reports" element={<ReportsPage />} />
+        <Route path="reports" element={<ReportsHub />} />
+        <Route path="reports/internal" element={<ReportsPage />} />
+        <Route path="reports/dhl" element={<DhlReportsPage />} />
         <Route path="finance" element={<RevenueDashboard />} />
         <Route path="admin_earnings" element={<AdminEarningsDashboard />} />
         <Route path="platform-earnings" element={<PlatformEarningsComingSoon />} />
