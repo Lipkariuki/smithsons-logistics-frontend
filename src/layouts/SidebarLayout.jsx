@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
   import {
     Home,
     FileText,
@@ -17,8 +17,9 @@ import { Calculator as CalculatorIcon } from "lucide-react";
 import axiosAuth from "../utils/axiosAuth";
 
 const SidebarLayout = () => {
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showReportsMenu, setShowReportsMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
     let mounted = true;
@@ -34,6 +35,11 @@ const SidebarLayout = () => {
       mounted = false;
     };
   }, []);
+  useEffect(() => {
+    if (location.pathname.startsWith("/admin/reports")) {
+      setShowReportsMenu(true);
+    }
+  }, [location.pathname]);
 
   const menuItems = useMemo(
     () => [
@@ -43,7 +49,6 @@ const SidebarLayout = () => {
       { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
       { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
       { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
-      { name: "Reports", icon: <LayoutDashboard size={18} />, path: "/admin/reports" },
       // { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
     ],
     []
@@ -99,6 +104,50 @@ const SidebarLayout = () => {
               {item.name}
             </NavLink>
           ))}
+
+          <div className="mt-2">
+            <button
+              onClick={() => setShowReportsMenu((prev) => !prev)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-base transition ${
+                location.pathname.startsWith("/admin/reports")
+                  ? "bg-purple-100 text-purple-700"
+                  : "text-gray-700 hover:bg-purple-50"
+              }`}
+              type="button"
+            >
+              <LayoutDashboard size={18} />
+              <span className="flex-1 text-left">Reports</span>
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${showReportsMenu ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {showReportsMenu && (
+              <div className="mt-1 ml-6 space-y-1">
+                <NavLink
+                  to="/admin/reports/internal"
+                  className={({ isActive }) =>
+                    `block px-3 py-2 rounded-md text-sm transition ${
+                      isActive ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-purple-50"
+                    }`
+                  }
+                >
+                  Internal Reports
+                </NavLink>
+                <NavLink
+                  to="/admin/reports/dhl"
+                  className={({ isActive }) =>
+                    `block px-3 py-2 rounded-md text-sm transition ${
+                      isActive ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-purple-50"
+                    }`
+                  }
+                >
+                  DHL Payouts
+                </NavLink>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* User actions */}
