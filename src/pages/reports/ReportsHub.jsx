@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Truck } from "lucide-react";
+import { FileText, Scale, Truck } from "lucide-react";
 
 const ReportsHub = () => {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ const ReportsHub = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl border border-purple-100 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-3 text-purple-700">
             <FileText size={22} />
@@ -46,6 +46,22 @@ const ReportsHub = () => {
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
           >
             Open DHL Reports
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex items-center gap-3 text-slate-700">
+            <Scale size={22} />
+            <h2 className="text-lg font-semibold">DHL Reconciliation</h2>
+          </div>
+          <p className="text-sm text-gray-600">
+            Compare internal orders against DHL records and quickly spot month-end differences.
+          </p>
+          <button
+            onClick={() => navigate("/admin/reports/dhl-reconciliation")}
+            className="inline-flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-md hover:bg-slate-900 transition"
+          >
+            Open Reconciliation
           </button>
         </div>
       </div>

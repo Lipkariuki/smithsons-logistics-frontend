@@ -18,6 +18,7 @@ import ExpensesPage from "./pages/ExpensesPage";
 import ReportsPage from "./pages/ReportsPage";
 import ReportsHub from "./pages/reports/ReportsHub";
 import DhlReportsPage from "./pages/reports/DhlReportsPage";
+import DhlReconciliationPage from "./pages/reports/DhlReconciliationPage";
 import RevenueDashboard from "./pages/revenue/RevenueDashboard";
 import AdminEarningsDashboard from "./pages/AdminEarnings";
 import PlatformEarningsComingSoon from "./pages/admin/PlatformEarningsComingSoon";
@@ -44,6 +45,7 @@ const App = () => {
         <Route path="reports" element={<ReportsHub />} />
         <Route path="reports/internal" element={<ReportsPage />} />
         <Route path="reports/dhl" element={<DhlReportsPage />} />
+        <Route path="reports/dhl-reconciliation" element={<DhlReconciliationPage />} />
         <Route path="finance" element={<RevenueDashboard />} />
         <Route path="admin_earnings" element={<AdminEarningsDashboard />} />
         <Route path="platform-earnings" element={<PlatformEarningsComingSoon />} />

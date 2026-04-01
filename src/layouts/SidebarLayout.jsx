@@ -145,6 +145,16 @@ const SidebarLayout = () => {
                 >
                   DHL Payouts
                 </NavLink>
+                <NavLink
+                  to="/admin/reports/dhl-reconciliation"
+                  className={({ isActive }) =>
+                    `block px-3 py-2 rounded-md text-sm transition ${
+                      isActive ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-purple-50"
+                    }`
+                  }
+                >
+                  DHL Reconciliation
+                </NavLink>
               </div>
             )}
           </div>
