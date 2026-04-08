@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axiosAuth from "../utils/axiosAuth";
 import Pagination from "../components/Pagination";
 
@@ -24,8 +24,6 @@ const ReportsPage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [vehicles, setVehicles] = useState([]);
@@ -84,33 +82,6 @@ const ReportsPage = () => {
       });
   };
 
-  const handleUpload = async (evt) => {
-    const file = evt.target.files?.[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
-    setUploading(true);
-    setError("");
-    setMessage("");
-    try {
-      const res = await axiosAuth.post("/reports/reconciliation/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const { created = 0, updated = 0, skipped = 0 } = res.data || {};
-      setMessage(`Upload complete. Created ${created}, updated ${updated}, skipped ${skipped}.`);
-      fetchReports();
-    } catch (err) {
-      setError(err.response?.data?.detail || "Failed to upload reconciliation file");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      setTimeout(() => {
-        setMessage("");
-        setError("");
-      }, 6000);
-    }
-  };
-
   const totals = useMemo(() => {
     return reports.reduce(
       (acc, row) => {
@@ -134,8 +105,6 @@ const ReportsPage = () => {
     return reports.slice(start, start + perPage);
   }, [reports, page, perPage]);
 
-  const templateUrl = `${import.meta.env.VITE_API_BASE_URL}/reports/reconciliation/template`;
-
   const downloadPdf = (vehicleId) => {
     const params = new URLSearchParams();
     if (startDate) params.set("start_date", startDate);
@@ -145,66 +114,43 @@ const ReportsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-full bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-purple-700">Owner Performance Reports</h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-3xl font-bold text-violet-950">Owner Performance Reports</h1>
+          <p className="text-sm text-violet-700/80">
             Review per-vehicle earnings and send SMS summaries to partners.
           </p>
-        </div>
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
-          <a
-            href={templateUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-purple-700 underline"
-          >
-            Download reconciliation template
-          </a>
-          <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <span className="bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 transition">
-              {uploading ? "Uploading..." : "Upload reconciliation CSV"}
-            </span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleUpload}
-              disabled={uploading}
-            />
-          </label>
         </div>
       </div>
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+        <div className="bg-white rounded-2xl border border-violet-100 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] px-6 py-4">
           <h3 className="text-sm text-gray-500">Gross Revenue</h3>
           <p className="text-2xl font-semibold text-purple-700">{formatMoney(totals.gross)}</p>
         </div>
-        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+        <div className="bg-white rounded-2xl border border-violet-100 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] px-6 py-4">
           <h3 className="text-sm text-gray-500">Net Revenue</h3>
           <p className="text-2xl font-semibold text-green-700">{formatMoney(totals.net)}</p>
         </div>
-        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+        <div className="bg-white rounded-2xl border border-violet-100 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] px-6 py-4">
           <h3 className="text-sm text-gray-500">Fuel Cost</h3>
           <p className="text-2xl font-semibold text-red-600">{formatMoney(totals.fuelCost)}</p>
         </div>
-        <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
+        <div className="bg-white rounded-2xl border border-violet-100 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] px-6 py-4">
           <h3 className="text-sm text-gray-500">Fuel Allocation</h3>
           <p className="text-2xl font-semibold text-blue-600">{Number(totals.fuelLitres || 0).toLocaleString()} L</p>
         </div>
       </section>
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-3">
+      <section className="bg-white rounded-2xl border border-violet-100 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] p-4 space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Owner</label>
+            <label className="text-xs font-medium text-violet-700">Owner</label>
             <select
               value={selectedOwner}
               onChange={(e) => setSelectedOwner(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="rounded-xl border border-violet-200 bg-violet-50/70 px-3 py-2"
             >
               <option value="">All owners</option>
               {owners
@@ -218,13 +164,13 @@ const ReportsPage = () => {
             </select>
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Truck registration</label>
+            <label className="text-xs font-medium text-violet-700">Truck registration</label>
             <input
               type="text"
               value={truckFilter}
               onChange={(e) => setTruckFilter(e.target.value.toUpperCase())}
               placeholder="e.g. KDK766A"
-              className="border rounded px-3 py-2 uppercase"
+              className="rounded-xl border border-violet-200 bg-violet-50/70 px-3 py-2 uppercase"
               list="report-truck-plates"
             />
             <datalist id="report-truck-plates">
@@ -234,27 +180,27 @@ const ReportsPage = () => {
             </datalist>
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Start date</label>
+            <label className="text-xs font-medium text-violet-700">Start date</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="rounded-xl border border-violet-200 bg-violet-50/70 px-3 py-2"
             />
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">End date</label>
+            <label className="text-xs font-medium text-violet-700">End date</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="rounded-xl border border-violet-200 bg-violet-50/70 px-3 py-2"
             />
           </div>
           <div className="flex gap-3 mt-2 lg:mt-0">
             <button
               onClick={fetchReports}
-              className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
+              className="rounded-xl bg-gradient-to-r from-violet-700 to-fuchsia-600 px-4 py-2 text-white hover:from-violet-800 hover:to-fuchsia-700 transition"
               disabled={loading}
             >
               {loading ? "Loading..." : "Refresh"}
@@ -268,7 +214,7 @@ const ReportsPage = () => {
                 setPage(1);
                 setTimeout(() => fetchReports(), 0);
               }}
-              className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-100"
+              className="rounded-xl border border-violet-200 px-4 py-2 hover:bg-violet-50"
             >
               Reset
             </button>
@@ -278,9 +224,9 @@ const ReportsPage = () => {
         {error && <div className="text-sm text-red-600">{error}</div>}
       </section>
 
-      <section className="bg-white rounded-xl shadow overflow-x-auto">
+      <section className="bg-white rounded-2xl border border-violet-100 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className="bg-violet-50/70 text-violet-700">
             <tr>
               <th className="px-4 py-2 text-left">Vehicle</th>
               <th className="px-4 py-2 text-left">Owner</th>
@@ -301,7 +247,7 @@ const ReportsPage = () => {
           <tbody>
             {paged.map((row) => {
               return (
-                <tr key={row.vehicle_id} className="border-t hover:bg-gray-50">
+                <tr key={row.vehicle_id} className="border-t hover:bg-violet-50/60">
                   <td className="px-4 py-2 font-medium text-purple-700">{row.plate_number}</td>
                   <td className="px-4 py-2">{row.owner_name || "—"}</td>
                   <td className="px-4 py-2 text-right">{row.trip_count}</td>
@@ -324,7 +270,7 @@ const ReportsPage = () => {
                   <td className="px-4 py-2">
                     <button
                       onClick={() => handleSendReport(row.vehicle_id)}
-                      className="text-sm text-white bg-blue-600 px-3 py-1.5 rounded hover:bg-blue-700"
+                      className="text-sm text-white bg-violet-600 px-3 py-1.5 rounded hover:bg-violet-700"
                     >
                       Send report
                     </button>
@@ -347,7 +293,7 @@ const ReportsPage = () => {
             )}
           </tbody>
           {reports.length > 0 && (
-            <tfoot className="bg-gray-100 font-semibold">
+            <tfoot className="bg-violet-50/70 font-semibold">
               <tr>
                 <td className="px-4 py-2">Totals</td>
                 <td></td>
@@ -378,13 +324,12 @@ const ReportsPage = () => {
         />
       </section>
 
-      <section className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-900">
+      <section className="bg-violet-50 border border-violet-200 rounded-2xl p-4 text-sm text-violet-900">
         <h2 className="font-semibold mb-2">How reconciliation works</h2>
         <p className="mb-2">
-          Upload the reconciliation CSV with per-vehicle adjustments for the selected period. The
-          system adds fuel, extra expenses, commission adjustments, and actual payments on top of the
-          automatically tracked trips, expenses, and commissions. Net profit is calculated as Gross −
-          Fuel − Expenses − Extra − Commission.
+          This report combines tracked trips, fuel usage, expenses, and commission to show owner
+          performance for the selected period. Net profit is calculated as Gross − Fuel − Expenses −
+          Extra − Commission.
         </p>
         <p>
           After importing, use the Send Report button to deliver a summary SMS to the vehicle owner.
