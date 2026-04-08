@@ -406,91 +406,88 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow-md px-6 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-bold text-purple-700">Admin Dashboards</h1>
-            <p className="text-sm text-gray-500">Overview of orders and financial performance</p>
-          </div>
-          <div className="text-right">
-            <div className="text-base font-semibold text-purple-700">Smithsons Logistics</div>
-            <div className="text-xs text-gray-500">Powering Every Trip. Empowering Every Partner.</div>
-          </div>
-        </div>
-      </header>
+    <div className="app-page">
+      <section className="app-hero">
+        <h1 className="app-title">Admin Dashboard</h1>
+        <p className="app-subtitle">Overview of orders, fuel, expenses, and financial performance.</p>
+      </section>
 
-      <main className="p-6 space-y-6">
+      <main className="space-y-6">
         {message && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded">
+          <div className="app-alert-success">
             {message}
           </div>
         )}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded">
+          <div className="app-alert-error">
             {error}
           </div>
         )}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
-            <h3 className="text-sm text-gray-500">Trip Revenue</h3>
-            <p className="text-2xl font-semibold text-purple-700">{summary.tripRevenue.toLocaleString()} KES</p>
+          <div className="app-stat-card">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500" />
+            <h3 className="app-stat-label">Trip Revenue</h3>
+            <p className="text-2xl font-semibold text-violet-800">{summary.tripRevenue.toLocaleString()} KES</p>
           </div>
-          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
-            <h3 className="text-sm text-gray-500">Expenses</h3>
+          <div className="app-stat-card">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-rose-400 to-rose-500" />
+            <h3 className="app-stat-label">Expenses</h3>
             <p className="text-2xl font-semibold text-red-600">{summary.expenses.toLocaleString()} KES</p>
           </div>
-          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
-            <h3 className="text-sm text-gray-500">Fuel Expense</h3>
+          <div className="app-stat-card">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-400 to-orange-500" />
+            <h3 className="app-stat-label">Fuel Expense</h3>
             <p className="text-2xl font-semibold text-orange-500">
               {summary.fuelTotal.toLocaleString()} KES
             </p>
           </div>
-          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
-            <h3 className="text-sm text-gray-500">Net Revenue</h3>
+          <div className="app-stat-card">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-emerald-400 to-green-500" />
+            <h3 className="app-stat-label">Net Revenue</h3>
             <p className="text-2xl font-semibold text-green-600">
               {summary.netRevenue.toLocaleString()} KES
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="mt-1 text-xs text-violet-500">
               After expenses, commissions, and fuel deductions.
             </p>
           </div>
-          <div className="bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4">
-            <h3 className="text-sm text-gray-500">Fuel Allocation</h3>
+          <div className="app-stat-card">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-sky-400 to-blue-500" />
+            <h3 className="app-stat-label">Fuel Allocation</h3>
             <p className="text-2xl font-semibold text-blue-600">{summary.fuelLitres.toLocaleString()} L</p>
           </div>
         </section>
 
         {editingOrder && (
-          <section className="bg-white rounded-xl border border-purple-100 shadow px-6 py-5 space-y-4">
+          <section className="app-card p-6 space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-purple-700">Fuel Calculator</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="app-section-title">Fuel Calculator</h2>
+                <p className="text-sm text-violet-600">
                   Capture fuel spend for this trip. Litres update in real time from the amount and price.
                 </p>
               </div>
-              <div className="text-sm text-gray-500 bg-purple-50 border border-purple-100 px-3 py-1 rounded-md self-start">
+              <div className="self-start rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-1 text-sm text-violet-600">
                 Trip #{editingOrder.trip_id || "—"} · Order {editingOrder.order_number || editingOrder.id}
               </div>
             </div>
             {fuelState.error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded">
+              <div className="app-alert-error">
                 {fuelState.error}
               </div>
             )}
             {fuelState.success && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded">
+              <div className="app-alert-success">
                 {fuelState.success}
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                <label className="text-xs font-semibold text-violet-600 uppercase mb-1">
                   Fuel type
                 </label>
                 <select
-                  className="border rounded px-3 py-2 text-sm"
+                  className="app-select text-sm"
                   value={fuelState.fuel_type}
                   onChange={(e) => handleFuelFieldChange("fuel_type", e.target.value)}
                   disabled={fuelState.loading}
@@ -503,7 +500,7 @@ const AdminDashboard = () => {
                 </select>
               </div>
               <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                <label className="text-xs font-semibold text-violet-600 uppercase mb-1">
                   Price per litre (KES)
                 </label>
                 <input
@@ -511,14 +508,14 @@ const AdminDashboard = () => {
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  className="border rounded px-3 py-2 text-sm"
+                  className="app-input text-sm"
                   value={fuelState.price_per_litre}
                   onChange={(e) => handleFuelFieldChange("price_per_litre", e.target.value)}
                   disabled={fuelState.loading}
                 />
               </div>
               <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                <label className="text-xs font-semibold text-violet-600 uppercase mb-1">
                   Fuel amount (KES)
                 </label>
                 <input
@@ -526,7 +523,7 @@ const AdminDashboard = () => {
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  className="border rounded px-3 py-2 text-sm"
+                  className="app-input text-sm"
                   value={fuelState.amount}
                   onChange={(e) => handleFuelFieldChange("amount", e.target.value)}
                   disabled={fuelState.loading}
@@ -534,11 +531,11 @@ const AdminDashboard = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <label className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                <label className="text-xs font-semibold text-violet-600 uppercase mb-1">
                   Litres (calculated)
                 </label>
-                <div className="border rounded px-3 py-2 bg-gray-50 flex items-baseline justify-between">
-                  <span className="text-lg font-semibold text-gray-800">
+                <div className="flex items-baseline justify-between rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2">
+                  <span className="text-lg font-semibold text-violet-950">
                     {fuelState.litres
                       ? Number(fuelState.litres).toLocaleString(undefined, {
                           minimumFractionDigits: 0,
@@ -546,7 +543,7 @@ const AdminDashboard = () => {
                         })
                       : "0.000"}
                   </span>
-                  <span className="text-xs uppercase tracking-wide text-gray-500">L</span>
+                  <span className="text-xs uppercase tracking-wide text-violet-500">L</span>
                 </div>
               </div>
             </div>
@@ -555,7 +552,7 @@ const AdminDashboard = () => {
                 type="button"
                 onClick={persistFuelExpense}
                 disabled={fuelState.loading}
-                className="inline-flex items-center justify-center bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded"
+                className="app-button-primary disabled:opacity-60"
               >
                 {fuelState.loading
                   ? "Saving…"
@@ -568,12 +565,12 @@ const AdminDashboard = () => {
                   type="button"
                   onClick={deleteFuelExpense}
                   disabled={fuelState.loading}
-                  className="inline-flex items-center justify-center border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-60 text-sm font-medium px-4 py-2 rounded"
+                  className="app-button-danger disabled:opacity-60"
                 >
                   Remove fuel expense
                 </button>
               )}
-              <div className="text-sm text-gray-500 sm:ml-auto">
+              <div className="text-sm text-violet-600 sm:ml-auto">
                 Net revenue impact:{" "}
                 <span className="font-semibold text-red-600">
                   -KES {currentFuelAmount.toLocaleString()}
@@ -584,27 +581,27 @@ const AdminDashboard = () => {
         )}
 
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link to="/admin/finance" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
-            <h3 className="text-lg font-bold text-gray-800">Financial Dashboard</h3>
-            <p className="text-sm text-gray-600">View revenue, commissions, and expense summaries.</p>
+          <Link to="/admin/finance" className="app-card block px-6 py-4 transition hover:shadow-[0_18px_40px_-20px_rgba(88,28,135,0.55)]">
+            <h3 className="text-lg font-bold text-violet-950">Financial Dashboard</h3>
+            <p className="text-sm text-violet-600">View revenue, commissions, and expense summaries.</p>
           </Link>
-          <Link to="/admin/orders" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
-            <h3 className="text-lg font-bold text-gray-800">Orders Dashboard</h3>
-            <p className="text-sm text-gray-600">Browse all raw orders, truck assignments, and trip statuses.</p>
+          <Link to="/admin/orders" className="app-card block px-6 py-4 transition hover:shadow-[0_18px_40px_-20px_rgba(88,28,135,0.55)]">
+            <h3 className="text-lg font-bold text-violet-950">Orders Dashboard</h3>
+            <p className="text-sm text-violet-600">Browse all raw orders, truck assignments, and trip statuses.</p>
           </Link>
-          <Link to="/admin/fleet" className="block bg-white rounded-xl border-l-4 border-purple-500 shadow px-6 py-4 hover:shadow-md transition">
-            <h3 className="text-lg font-bold text-gray-800">Fleet</h3>
-            <p className="text-sm text-gray-600">Owners and vehicles with search, filters, and export.</p>
+          <Link to="/admin/fleet" className="app-card block px-6 py-4 transition hover:shadow-[0_18px_40px_-20px_rgba(88,28,135,0.55)]">
+            <h3 className="text-lg font-bold text-violet-950">Fleet</h3>
+            <p className="text-sm text-violet-600">Owners and vehicles with search, filters, and export.</p>
           </Link>
         </section>
 
         {/* Orders Table */}
-        <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-          <h2 className="text-xl font-semibold mb-4">Orders</h2>
+        <section className="app-card p-4 overflow-x-auto">
+          <h2 className="app-section-title mb-4">Orders</h2>
           <div className="min-w-[1200px] max-h-[70vh] overflow-auto">
-          <table className="w-full table-auto text-sm">
-          <thead className="sticky top-0 z-10 bg-white">
-          <tr className="text-left border-b bg-gray-100 text-gray-600">
+          <table className="app-table w-full table-auto">
+          <thead className="sticky top-0 z-10">
+          <tr className="text-left border-b border-violet-100">
             <th className="py-2 px-4">Order ID</th>
             <th className="py-2 px-4">DHL Order #</th>
             <th className="py-2 px-4">Invoice</th>
@@ -634,9 +631,9 @@ const AdminDashboard = () => {
                 const isEditing = editRowId === order.id;
 
                 return (
-                  <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
+                  <tr key={order.id} className="text-slate-700">
                     <td className="py-2 px-4">{order.id}</td>
-                    <td className="py-2 px-4 font-bold text-purple-700">{order.order_number}</td>
+                    <td className="py-2 px-4 font-bold text-violet-700">{order.order_number}</td>
 
                     <td className="py-2 px-4">{order.invoice_number}</td>
                     <td className="py-2 px-4">
@@ -644,7 +641,7 @@ const AdminDashboard = () => {
                         <input
                           value={editFormData.product_description}
                           onChange={(e) => setEditFormData({ ...editFormData, product_description: e.target.value })}
-                          className="w-full p-1 border rounded"
+                          className="app-input w-full p-1"
                         />
                       ) : (
                         order.product_description
@@ -655,7 +652,7 @@ const AdminDashboard = () => {
                         <input
                           value={editFormData.destination}
                           onChange={(e) => setEditFormData({ ...editFormData, destination: e.target.value })}
-                          className="w-full p-1 border rounded"
+                          className="app-input w-full p-1"
                         />
                       ) : (
                         order.destination
@@ -679,7 +676,7 @@ const AdminDashboard = () => {
                         <select
                           value={editFormData.driver_id}
                           onChange={(e) => setEditFormData({ ...editFormData, driver_id: e.target.value })}
-                          className="w-full border rounded p-1"
+                          className="app-select w-full p-1"
                         >
                           <option value="">Assign Driver</option>
                           {availableDrivers.map((driver) => (
@@ -697,7 +694,7 @@ const AdminDashboard = () => {
                         <select
                           value={editFormData.vehicle_id}
                           onChange={(e) => setEditFormData({ ...editFormData, vehicle_id: e.target.value })}
-                          className="w-full border rounded p-1"
+                          className="app-select w-full p-1"
                         >
                           <option value="">Assign Vehicle</option>
                           {availableVehicles.map((vehicle) => (
@@ -716,7 +713,7 @@ const AdminDashboard = () => {
                           placeholder="Trip revenue (KES)"
                           value={editFormData.revenue_amount ?? ""}
                           onChange={(e) => setEditFormData({ ...editFormData, revenue_amount: e.target.value })}
-                          className="border rounded px-3 py-1 w-40"
+                          className="app-input w-40 px-3 py-1"
                         />
                       ) : (
                         (order.total_amount || 0).toLocaleString()
@@ -726,24 +723,24 @@ const AdminDashboard = () => {
                       {isEditing ? (
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
                           <div className="flex-1 min-w-[12rem]">
-                            <label className="block text-xs text-gray-500 mb-1">Expense amount (KES)</label>
+                            <label className="mb-1 block text-xs text-violet-500">Expense amount (KES)</label>
                             <input
                               type="text"
                               inputMode="decimal"
                               placeholder="e.g. 3,500"
                               value={editFormData.expense_amount}
                               onChange={(e) => setEditFormData({ ...editFormData, expense_amount: e.target.value })}
-                              className="border rounded px-3 py-2 w-full text-sm md:text-base"
+                              className="app-input w-full text-sm md:text-base"
                             />
                           </div>
                           <div className="flex-[2] min-w-[16rem]">
-                            <label className="block text-xs text-gray-500 mb-1">Description</label>
+                            <label className="mb-1 block text-xs text-violet-500">Description</label>
                             <input
                               type="text"
                               placeholder="e.g. Fuel, tolls, maintenance..."
                               value={editFormData.expense_description}
                               onChange={(e) => setEditFormData({ ...editFormData, expense_description: e.target.value })}
-                              className="border rounded px-3 py-2 w-full text-sm md:text-base"
+                              className="app-input w-full text-sm md:text-base"
                             />
                           </div>
                         </div>
@@ -758,7 +755,7 @@ const AdminDashboard = () => {
                           placeholder="%"
                           value={editFormData.commission_rate}
                           onChange={(e) => setEditFormData({ ...editFormData, commission_rate: e.target.value })}
-                          className="w-full p-1 border rounded"
+                          className="app-input w-full p-1"
                         />
                       ) : (
                         order.commission.toLocaleString()
@@ -770,13 +767,13 @@ const AdminDashboard = () => {
                         <>
                           <button
                             onClick={() => handleSaveClick(order.id)}
-                            className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                            className="app-button-primary px-2 py-1 text-xs"
                           >
                             Save
                           </button>
                           <button
                             onClick={handleCancelClick}
-                            className="border px-2 py-1 rounded text-xs"
+                            className="app-button-secondary px-2 py-1 text-xs"
                           >
                             Cancel
                           </button>
@@ -784,7 +781,7 @@ const AdminDashboard = () => {
                       ) : (
                         <button
                           onClick={() => handleEditClick(order)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="font-medium text-violet-700 hover:text-violet-900"
                         >
                           ✏️
                         </button>

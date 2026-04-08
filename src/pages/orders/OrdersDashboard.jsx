@@ -274,17 +274,20 @@ const AdminOrdersPage = () => {
   }, [filteredOrders, page, perPage]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-2xl font-bold text-purple-700 mb-4">Admin Orders</h1>
-      <div className="mb-3 text-xs text-gray-500">
+    <div className="app-page">
+      <section className="app-hero">
+        <h1 className="app-title">Admin Orders</h1>
+        <p className="app-subtitle">Create, filter, and export order records with a consistent Smithsons layout.</p>
+      </section>
+      <div className="mb-3 text-xs text-violet-600">
         Note: Editing (assignments, expenses, commission) is available on the Admin Dashboard.
       </div>
-      {message && <div className="text-green-600 mb-2">{message}</div>}
-      {error && <div className="text-red-600 mb-2">{error}</div>}
+      {message && <div className="app-alert-success mb-2">{message}</div>}
+      {error && <div className="app-alert-error mb-2">{error}</div>}
 
       <button
         onClick={() => setShowCreateForm(!showCreateForm)}
-        className="mb-4 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+        className="app-button-primary mb-4"
       >
         {showCreateForm ? "Close Order Form" : "Create New Order"}
       </button>
@@ -292,7 +295,7 @@ const AdminOrdersPage = () => {
       {showCreateForm && (
         <form
           onSubmit={handleCreateSubmit}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-white p-4 rounded border"
+          className="app-card grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4"
         >
           <input
             name="order_number"
@@ -300,28 +303,28 @@ const AdminOrdersPage = () => {
             value={createForm.order_number}
             onChange={handleCreateChange}
             required
-            className="p-2 border rounded"
+            className="app-input"
           />
           <input
             name="invoice_number"
             placeholder="INVOICE NUMBER"
             value={createForm.invoice_number}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <input
             name="purchase_order_number"
             placeholder="PO NUMBER"
             value={createForm.purchase_order_number}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <input
             name="dispatch_note_number"
             placeholder="DISPATCH NOTE"
             value={createForm.dispatch_note_number}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <input
             type="date"
@@ -329,14 +332,14 @@ const AdminOrdersPage = () => {
             value={createForm.date}
             onChange={handleCreateChange}
             required
-            className="p-2 border rounded"
+            className="app-input"
           />
           <select
             name="product_type"
             value={createForm.product_type}
             onChange={handleCreateChange}
             required
-            className="p-2 border rounded"
+            className="app-select"
           >
             <option value="">Select Product Type</option>
             {productTypes.map((type, idx) => (
@@ -348,14 +351,14 @@ const AdminOrdersPage = () => {
             placeholder="PRODUCT DESCRIPTION"
             value={createForm.product_description}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <select
             name="destination"
             value={createForm.destination}
             onChange={handleCreateChange}
             required
-            className="p-2 border rounded"
+            className="app-select"
           >
             <option value="">Select Destination</option>
             {destinations.map((dest, idx) => (
@@ -368,7 +371,7 @@ const AdminOrdersPage = () => {
             placeholder="OFFLOADING CHARGES (KES)"
             value={createForm.cases}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <input
             type="number"
@@ -377,7 +380,7 @@ const AdminOrdersPage = () => {
             placeholder="MILEAGE CHARGE (KES)"
             value={createForm.price_per_case}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <input
             type="text"
@@ -385,7 +388,7 @@ const AdminOrdersPage = () => {
             placeholder="30 litres"
             value={createForm.fuel_litres}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <input
             type="text"
@@ -393,22 +396,22 @@ const AdminOrdersPage = () => {
             placeholder="Martin 07231208321"
             value={createForm.driver_details}
             onChange={handleCreateChange}
-            className="p-2 border rounded"
+            className="app-input"
           />
           <select
             name="truck_plate"
             value={createForm.truck_plate}
             onChange={handleCreateChange}
             required
-            className="p-2 border rounded"
+            className="app-select"
           >
             <option value="">Select Truck/Van</option>
             {availableVehicles.map((v) => (
               <option key={v.id} value={v.plate_number}>{v.plate_number}</option>
             ))}
           </select>
-          <div className="md:col-span-2 border rounded bg-gray-50 p-3 text-sm text-gray-700">
-            <div className="font-semibold text-purple-700 mb-1">Rate card lookup</div>
+          <div className="md:col-span-2 rounded-2xl border border-violet-100 bg-violet-50/60 p-4 text-sm text-violet-800">
+            <div className="mb-1 font-semibold text-violet-800">Rate card lookup</div>
             <div>
               Vehicle size:{" "}
               <span className="font-medium">
@@ -435,8 +438,8 @@ const AdminOrdersPage = () => {
           <button
             type="submit"
             disabled={creatingOrder || !rateCardMatch}
-            className={`col-span-1 md:col-span-2 bg-green-600 text-white p-2 rounded transition ${
-              creatingOrder || !rateCardMatch ? "opacity-60 cursor-not-allowed" : "hover:bg-green-700"
+            className={`app-button-primary col-span-1 md:col-span-2 ${
+              creatingOrder || !rateCardMatch ? "opacity-60 cursor-not-allowed" : ""
             }`}
           >
             {creatingOrder ? "Creating..." : "Submit Order"}
@@ -444,11 +447,11 @@ const AdminOrdersPage = () => {
         </form>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-3 items-center">
+      <div className="app-card-soft mb-4 flex flex-wrap gap-3 items-center p-5">
         <select
           value={quickRange}
           onChange={handleQuickRangeChange}
-          className="p-2 border rounded"
+          className="app-select"
         >
           <option value="">All dates</option>
           <option value="today">Today</option>
@@ -460,21 +463,21 @@ const AdminOrdersPage = () => {
           type="date"
           value={startDate}
           onChange={handleStartDateChange}
-          className="p-2 border rounded"
+          className="app-input"
           placeholder="Start date"
         />
-        <span className="text-gray-500">to</span>
+        <span className="text-violet-500">to</span>
         <input
           type="date"
           value={endDate}
           onChange={handleEndDateChange}
-          className="p-2 border rounded"
+          className="app-input"
           placeholder="End date"
         />
         <select
           value={vehicleFilter}
           onChange={handleVehicleFilterChange}
-          className="p-2 border rounded"
+          className="app-select"
         >
           <option value="">All Vehicles</option>
           {availableVehicles.map((v) => (
@@ -483,7 +486,7 @@ const AdminOrdersPage = () => {
         </select>
         <button
           onClick={handleResetFilters}
-          className="bg-gray-100 border px-3 py-2 rounded hover:bg-gray-200"
+          className="app-button-secondary"
           type="button"
         >
           Reset
@@ -524,17 +527,17 @@ const AdminOrdersPage = () => {
             { label: "Driver Details", key: "driver_details" },
           ]}
           filename="orders_export.csv"
-          className="bg-blue-600 text-white px-3 py-2 rounded"
+          className="app-button-secondary"
         >
           Export CSV
         </CSVLink>
       </div>
 
-      <section className="bg-white shadow rounded-lg p-4 overflow-x-auto">
+      <section className="app-card p-4 overflow-x-auto">
         <div className="min-w-[1100px] max-h-[70vh] overflow-auto">
-        <table className="w-full table-auto text-sm">
-          <thead className="sticky top-0 z-10 bg-white">
-            <tr className="text-left border-b bg-gray-100 text-gray-600">
+        <table className="app-table table-auto">
+          <thead className="sticky top-0 z-10">
+            <tr className="text-left border-b border-violet-100">
               <th className="py-2 px-4">Date</th>
               <th className="py-2 px-4">Order ID</th>
               <th className="py-2 px-4">DHL Order #</th>
@@ -550,10 +553,10 @@ const AdminOrdersPage = () => {
           <tbody>
             {pagedOrders.map((order) => {
               return (
-                <tr key={order.id} className="border-t hover:bg-gray-50 text-gray-700">
+                <tr key={order.id} className="text-slate-700">
                   <td className="py-2 px-4">{dateOnly(order.date)}</td>
                   <td className="py-2 px-4">{order.id}</td>
-                  <td className="py-2 px-4 font-bold text-purple-700">{order.order_number}</td>
+                  <td className="py-2 px-4 font-bold text-violet-700">{order.order_number}</td>
                   <td className="py-2 px-4">{order.invoice_number}</td>
                   <td className="py-2 px-4">{order.product_description}</td>
                   <td className="py-2 px-4">{order.destination}</td>
