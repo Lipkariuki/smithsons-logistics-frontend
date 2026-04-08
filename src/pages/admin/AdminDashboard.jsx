@@ -8,6 +8,30 @@ const FUEL_TYPES = [
   { label: "Petrol", value: "petrol" },
 ];
 const DEFAULT_FUEL_PRICE = 171.0;
+const CURRENT_MONTH_KEY = new Date().toISOString().slice(0, 7);
+
+const getMonthKey = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
+const formatMonthLabel = (monthKey) => {
+  if (!monthKey) return "All time";
+  const [year, month] = monthKey.split("-");
+  const date = new Date(Number(year), Number(month) - 1, 1);
+  return date.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+};
+
+const getMonthBounds = (monthKey) => {
+  if (!monthKey) return { start: "", end: "" };
+  const [year, month] = monthKey.split("-").map(Number);
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
+  const toIso = (value) => value.toISOString().slice(0, 10);
+  return { start: toIso(start), end: toIso(end) };
+};
 
 const AdminDashboard = () => {
   const createInitialFuelState = () => ({
@@ -32,6 +56,8 @@ const AdminDashboard = () => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [fuelState, setFuelState] = useState(createInitialFuelState);
+  const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH_KEY);
+  const [fuelSummaryTotal, setFuelSummaryTotal] = useState(0);
 
   const fetchOrders = () => {
     axiosAuth.get("/admin/orders")
@@ -228,27 +254,66 @@ const AdminDashboard = () => {
     fetchVehicles();
   }, []);
 
+  const availableMonths = useMemo(() => {
+    const values = Array.from(new Set(orders.map((order) => getMonthKey(order.date)).filter(Boolean)));
+    const sorted = values.sort((a, b) => b.localeCompare(a));
+    if (!sorted.includes(CURRENT_MONTH_KEY)) {
+      sorted.unshift(CURRENT_MONTH_KEY);
+    }
+    return sorted;
+  }, [orders]);
+
+  const visibleOrders = useMemo(() => {
+    if (!selectedMonth) return orders;
+    return orders.filter((order) => getMonthKey(order.date) === selectedMonth);
+  }, [orders, selectedMonth]);
+
   const pagedOrders = useMemo(() => {
     const start = (page - 1) * perPage;
-    return orders.slice(start, start + perPage);
-  }, [orders, page, perPage]);
+    return visibleOrders.slice(start, start + perPage);
+  }, [visibleOrders, page, perPage]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    let mounted = true;
+    const params = { page: 1, per_page: 1, kind: "fuel" };
+    if (selectedMonth) {
+      const { start, end } = getMonthBounds(selectedMonth);
+      params.start_date = start;
+      params.end_date = end;
+    }
+    axiosAuth
+      .get("/expenses/", { params })
+      .then((res) => {
+        if (!mounted) return;
+        setFuelSummaryTotal(Number(res.data?.total_amount || 0));
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setFuelSummaryTotal(0);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [selectedMonth]);
 
   const summary = useMemo(() => {
-    const totals = orders.reduce(
+    const totals = visibleOrders.reduce(
       (acc, order) => {
         acc.tripRevenue += Number(order.total_amount || 0);
         acc.expenses += Number(order.expenses || 0);
         acc.commission += Number(order.commission || 0);
-        acc.fuelTotal += Number(order.fuel_amount || 0);
-        acc.fuelLitres += Number(order.fuel_litres || 0);
         return acc;
       },
-      { tripRevenue: 0, expenses: 0, commission: 0, fuelTotal: 0, fuelLitres: 0 }
+      { tripRevenue: 0, expenses: 0, commission: 0 }
     );
     totals.netRevenue =
-      totals.tripRevenue - totals.expenses - totals.commission - totals.fuelTotal;
+      totals.tripRevenue - totals.expenses - totals.commission - fuelSummaryTotal;
     return totals;
-  }, [orders]);
+  }, [visibleOrders, fuelSummaryTotal]);
 
   const editingOrder = useMemo(
     () => (editRowId ? orders.find((o) => o.id === editRowId) : null),
@@ -412,6 +477,32 @@ const AdminDashboard = () => {
         <p className="app-subtitle">Overview of orders, fuel, expenses, and financial performance.</p>
       </section>
 
+      <section className="app-card-soft p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-[0.24em] text-violet-500">Period</div>
+            <div className="mt-2 text-2xl font-semibold text-violet-950">
+              {selectedMonth ? formatMonthLabel(selectedMonth) : "All Time"}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="text-xs font-medium text-violet-700">View</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="app-select min-w-[15rem]"
+            >
+              <option value="">All time</option>
+              {availableMonths.map((monthKey) => (
+                <option key={monthKey} value={monthKey}>
+                  {formatMonthLabel(monthKey)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
+
       <main className="space-y-6">
         {message && (
           <div className="app-alert-success">
@@ -423,7 +514,7 @@ const AdminDashboard = () => {
             {error}
           </div>
         )}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <div className="app-stat-card">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500" />
             <h3 className="app-stat-label">Trip Revenue</h3>
@@ -438,7 +529,7 @@ const AdminDashboard = () => {
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-400 to-orange-500" />
             <h3 className="app-stat-label">Fuel Expense</h3>
             <p className="text-2xl font-semibold text-orange-500">
-              {summary.fuelTotal.toLocaleString()} KES
+              {fuelSummaryTotal.toLocaleString()} KES
             </p>
           </div>
           <div className="app-stat-card">
@@ -450,11 +541,6 @@ const AdminDashboard = () => {
             <p className="mt-1 text-xs text-violet-500">
               After expenses, commissions, and fuel deductions.
             </p>
-          </div>
-          <div className="app-stat-card">
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-sky-400 to-blue-500" />
-            <h3 className="app-stat-label">Fuel Allocation</h3>
-            <p className="text-2xl font-semibold text-blue-600">{summary.fuelLitres.toLocaleString()} L</p>
           </div>
         </section>
 
@@ -796,7 +882,7 @@ const AdminDashboard = () => {
           <Pagination
             page={page}
             perPage={perPage}
-            total={orders.length}
+            total={visibleOrders.length}
             onPageChange={setPage}
             onPerPageChange={setPerPage}
           />
