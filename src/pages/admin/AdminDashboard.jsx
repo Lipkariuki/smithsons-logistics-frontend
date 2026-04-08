@@ -57,8 +57,13 @@ const AdminDashboard = () => {
   const [perPage, setPerPage] = useState(10);
   const [fuelState, setFuelState] = useState(createInitialFuelState);
   const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH_KEY);
-  const [fuelSummaryTotal, setFuelSummaryTotal] = useState(0);
-  const [expenseSummaryTotal, setExpenseSummaryTotal] = useState(0);
+  const [dashboardTotals, setDashboardTotals] = useState({
+    grossRevenue: 0,
+    expenseTotal: 0,
+    commissionTotal: 0,
+    fuelCost: 0,
+    netRevenue: 0,
+  });
 
   const fetchOrders = () => {
     axiosAuth.get("/admin/orders")
@@ -280,46 +285,46 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     let mounted = true;
-    const periodParams = { page: 1, per_page: 1 };
+    const params = {};
     if (selectedMonth) {
       const { start, end } = getMonthBounds(selectedMonth);
-      periodParams.start_date = start;
-      periodParams.end_date = end;
+      params.start_date = start;
+      params.end_date = end;
     }
 
-    Promise.all([
-      axiosAuth.get("/expenses/", { params: { ...periodParams, kind: "fuel" } }),
-      axiosAuth.get("/expenses/", { params: { ...periodParams, kind: "other" } }),
-    ])
-      .then(([fuelRes, expenseRes]) => {
+    axiosAuth
+      .get("/reports/summary", { params })
+      .then((res) => {
         if (!mounted) return;
-        setFuelSummaryTotal(Number(fuelRes.data?.total_amount || 0));
-        setExpenseSummaryTotal(Number(expenseRes.data?.total_amount || 0));
+        const rows = Array.isArray(res.data) ? res.data : [];
+        const nextTotals = rows.reduce(
+          (acc, row) => {
+            acc.grossRevenue += Number(row.gross_revenue || 0);
+            acc.expenseTotal += Number(row.other_expenses || 0) + Number(row.extra_expenses || 0);
+            acc.commissionTotal += Number(row.commission || 0);
+            acc.fuelCost += Number(row.fuel_cost || 0);
+            acc.netRevenue += Number(row.net_profit || 0);
+            return acc;
+          },
+          { grossRevenue: 0, expenseTotal: 0, commissionTotal: 0, fuelCost: 0, netRevenue: 0 }
+        );
+        setDashboardTotals(nextTotals);
       })
       .catch(() => {
         if (!mounted) return;
-        setFuelSummaryTotal(0);
-        setExpenseSummaryTotal(0);
+        setDashboardTotals({
+          grossRevenue: 0,
+          expenseTotal: 0,
+          commissionTotal: 0,
+          fuelCost: 0,
+          netRevenue: 0,
+        });
       });
 
     return () => {
       mounted = false;
     };
   }, [selectedMonth]);
-
-  const summary = useMemo(() => {
-    const totals = visibleOrders.reduce(
-      (acc, order) => {
-        acc.tripRevenue += Number(order.total_amount || 0);
-        acc.commission += Number(order.commission || 0);
-        return acc;
-      },
-      { tripRevenue: 0, commission: 0 }
-    );
-    totals.netRevenue =
-      totals.tripRevenue - expenseSummaryTotal - totals.commission - fuelSummaryTotal;
-    return totals;
-  }, [visibleOrders, expenseSummaryTotal, fuelSummaryTotal]);
 
   const editingOrder = useMemo(
     () => (editRowId ? orders.find((o) => o.id === editRowId) : null),
@@ -523,29 +528,29 @@ const AdminDashboard = () => {
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <div className="app-stat-card">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500" />
-            <h3 className="app-stat-label">Trip Revenue</h3>
-            <p className="text-2xl font-semibold text-violet-800">{summary.tripRevenue.toLocaleString()} KES</p>
+            <h3 className="app-stat-label">Gross Revenue</h3>
+            <p className="text-2xl font-semibold text-violet-800">{dashboardTotals.grossRevenue.toLocaleString()} KES</p>
           </div>
           <div className="app-stat-card">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-rose-400 to-rose-500" />
             <h3 className="app-stat-label">Expenses</h3>
-            <p className="text-2xl font-semibold text-red-600">{expenseSummaryTotal.toLocaleString()} KES</p>
+            <p className="text-2xl font-semibold text-red-600">{dashboardTotals.expenseTotal.toLocaleString()} KES</p>
           </div>
           <div className="app-stat-card">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-400 to-orange-500" />
             <h3 className="app-stat-label">Fuel Expense</h3>
             <p className="text-2xl font-semibold text-orange-500">
-              {fuelSummaryTotal.toLocaleString()} KES
+              {dashboardTotals.fuelCost.toLocaleString()} KES
             </p>
           </div>
           <div className="app-stat-card">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-emerald-400 to-green-500" />
             <h3 className="app-stat-label">Net Revenue</h3>
             <p className="text-2xl font-semibold text-green-600">
-              {summary.netRevenue.toLocaleString()} KES
+              {dashboardTotals.netRevenue.toLocaleString()} KES
             </p>
             <p className="mt-1 text-xs text-violet-500">
-              After expenses, commissions, and fuel deductions.
+              Matched to the internal reporting summary for the selected period.
             </p>
           </div>
         </section>
