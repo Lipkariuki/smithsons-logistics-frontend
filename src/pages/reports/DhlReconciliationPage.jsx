@@ -73,17 +73,17 @@ const DhlReconciliationPage = () => {
   const hasSelectedMismatch = selectedInternalOnly.length > 0 || selectedDhlOnly.length > 0;
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-6 space-y-6">
+    <div className="app-page">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-violet-950">DHL Reconciliation</h1>
-          <p className="text-sm text-violet-700/80">
+          <h1 className="app-title">DHL Reconciliation</h1>
+          <p className="app-subtitle">
             Compare internal records against DHL totals for the month and spot any differences quickly.
           </p>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-violet-100 bg-white/90 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] p-4 space-y-3">
+      <section className="app-card-soft p-4 space-y-3">
         <div className="flex flex-col md:flex-row md:items-end gap-3">
           <div className="flex flex-col">
             <label className="text-xs font-medium text-violet-700">Start date</label>
@@ -91,7 +91,7 @@ const DhlReconciliationPage = () => {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-xl border border-violet-200 bg-violet-50/70 px-3 py-2 text-violet-950 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"
+              className="app-input"
             />
           </div>
           <div className="flex flex-col">
@@ -100,18 +100,18 @@ const DhlReconciliationPage = () => {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-xl border border-violet-200 bg-violet-50/70 px-3 py-2 text-violet-950 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-200"
+              className="app-input"
             />
           </div>
           <button
             onClick={fetchReport}
-            className="rounded-xl bg-gradient-to-r from-violet-700 to-fuchsia-600 px-4 py-2 font-medium text-white shadow-lg shadow-violet-200 transition hover:from-violet-800 hover:to-fuchsia-700 disabled:cursor-not-allowed disabled:opacity-70"
+            className="app-button-primary"
             disabled={loading}
           >
             {loading ? "Loading..." : "Check Month"}
           </button>
         </div>
-        {error && <div className="text-sm text-rose-600">{error}</div>}
+        {error && <div className="app-alert-error">{error}</div>}
       </section>
 
       {report && (

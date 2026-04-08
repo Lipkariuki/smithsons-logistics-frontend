@@ -50,46 +50,46 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 px-4">
+      <div className="w-full max-w-md rounded-[2rem] border border-violet-100 bg-white/95 p-8 shadow-[0_24px_70px_-28px_rgba(88,28,135,0.45)]">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-extrabold text-purple-700">Smithsons Logistics</h1>
-          <p className="text-sm text-gray-600">Powering Every Trip. Empowering Every Partner.</p>
+          <h1 className="text-3xl font-extrabold text-violet-900">Smithsons Logistics</h1>
+          <p className="text-sm text-violet-700/80">Powering Every Trip. Empowering Every Partner.</p>
         </div>
-        <h2 className="text-xl font-bold text-center mb-2">🔐 Welcome Back</h2>
-        <p className="text-center text-gray-600 mb-6">Login to your dashboard</p>
+        <h2 className="mb-2 text-center text-2xl font-bold text-violet-950">Welcome Back</h2>
+        <p className="mb-6 text-center text-violet-700/80">Login to your dashboard</p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input
             type="text"
             placeholder="Phone"
-            className="w-full border border-gray-300 px-4 py-2 rounded"
+            className="app-input w-full px-4 py-3"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
           <input
             type="password"
             placeholder="Password"
-            className="w-full border border-gray-300 px-4 py-2 rounded"
+            className="app-input w-full px-4 py-3"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && (
-            <p className="text-red-500 text-sm text-center">{error}</p>
+            <p className="app-alert-error text-center">{error}</p>
           )}
           <button
             type="submit"
-            className="w-full bg-purple-600 text-white font-semibold py-2 rounded hover:bg-purple-700"
+            className="app-button-primary w-full py-3"
           >
             Login
           </button>
         </form>
 
-        <div className="text-center mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-center text-sm text-violet-700/80">
           Don’t have an account?{" "}
           <button
             onClick={handleSignupClick}
-            className="text-purple-700 font-medium hover:underline"
+            className="font-medium text-violet-700 hover:underline"
           >
             Sign up
           </button>

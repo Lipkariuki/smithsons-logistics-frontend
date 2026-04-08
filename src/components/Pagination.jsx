@@ -16,20 +16,20 @@ const Pagination = ({
 
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-4">
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-violet-700/80">
         Showing <span className="font-medium">{start}</span>–<span className="font-medium">{end}</span> of {total.toLocaleString()}
       </div>
       <div className="flex items-center gap-2">
         <button
-          className="px-3 py-1.5 border rounded disabled:opacity-50"
+          className="app-button-secondary px-3 py-1.5 disabled:opacity-50"
           onClick={() => canPrev && onPageChange(page - 1)}
           disabled={!canPrev}
         >
           Prev
         </button>
-        <div className="text-sm text-gray-700">Page {page} of {totalPages}</div>
+        <div className="text-sm text-violet-800">Page {page} of {totalPages}</div>
         <button
-          className="px-3 py-1.5 border rounded disabled:opacity-50"
+          className="app-button-secondary px-3 py-1.5 disabled:opacity-50"
           onClick={() => canNext && onPageChange(page + 1)}
           disabled={!canNext}
         >
@@ -39,7 +39,7 @@ const Pagination = ({
           <select
             value={perPage}
             onChange={(e) => onPerPageChange(Number(e.target.value))}
-            className="ml-2 border rounded px-2 py-1 text-sm"
+            className="app-select ml-2 px-2 py-1 text-sm"
           >
             {[10, 25, 50].map((n) => (
               <option key={n} value={n}>{n} / page</option>
@@ -52,4 +52,3 @@ const Pagination = ({
 };
 
 export default Pagination;
-

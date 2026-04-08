@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
 import { Bar } from "react-chartjs-2";
+import Pagination from "../../components/Pagination";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -158,7 +159,14 @@ const RevenueDashboard = () => {
   })();
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="app-page">
+      <section className="app-hero">
+        <h1 className="app-title">Revenue Dashboard</h1>
+        <p className="app-subtitle">
+          Review collected revenue, costs, and export filtered order performance in one place.
+        </p>
+      </section>
+
       <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <SummaryCard label="Total Collected" value={totalAmount} color="gray-700" />
         <SummaryCard label="Total Expenses" value={totalExpenses} color="red-600" />
@@ -166,7 +174,8 @@ const RevenueDashboard = () => {
         <SummaryCard label="Net Revenue" value={totalRevenue} color="green-600" bold />
       </section>
 
-      <div className="flex flex-wrap gap-4 items-center mb-4">
+      <section className="app-card-soft p-5">
+      <div className="flex flex-wrap gap-4 items-center">
         <select
           value={quickRange}
           onChange={(e) => {
@@ -201,7 +210,7 @@ const RevenueDashboard = () => {
               setEndDate("");
             }
           }}
-          className="border p-2 rounded"
+          className="app-select min-w-[11rem]"
         >
           <option value="">All dates</option>
           <option value="today">Today</option>
@@ -209,10 +218,10 @@ const RevenueDashboard = () => {
           <option value="thisMonth">This month</option>
           <option value="lastMonth">Last month</option>
         </select>
-        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 rounded" />
-        <span className="text-gray-500">to</span>
-        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 rounded" />
-        <select value={filterDraft.month} onChange={(e) => setFilterDraft({ ...filterDraft, month: e.target.value })} className="border p-2 rounded">
+        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="app-input min-w-[11rem]" />
+        <span className="text-violet-500">to</span>
+        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="app-input min-w-[11rem]" />
+        <select value={filterDraft.month} onChange={(e) => setFilterDraft({ ...filterDraft, month: e.target.value })} className="app-select min-w-[11rem]">
           <option value="">All Months</option>
           {[...Array(12)].map((_, i) => (
             <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString("default", { month: "long" })}</option>
@@ -223,41 +232,42 @@ const RevenueDashboard = () => {
           placeholder="Filter by product"
           value={filterDraft.product}
           onChange={(e) => setFilterDraft({ ...filterDraft, product: e.target.value })}
-          className="border p-2 rounded"
+          className="app-input min-w-[14rem]"
         />
-        <select value={filterDraft.vehicle} onChange={(e) => setFilterDraft({ ...filterDraft, vehicle: e.target.value })} className="border p-2 rounded">
+        <select value={filterDraft.vehicle} onChange={(e) => setFilterDraft({ ...filterDraft, vehicle: e.target.value })} className="app-select min-w-[14rem]">
           <option value="">All Trucks/Vans</option>
           {vehicles.map((v) => (
             <option key={v.id} value={v.id}>{v.plate_number}</option>
           ))}
         </select>
-        <select value={filterDraft.owner} onChange={(e) => setFilterDraft({ ...filterDraft, owner: e.target.value })} className="border p-2 rounded">
+        <select value={filterDraft.owner} onChange={(e) => setFilterDraft({ ...filterDraft, owner: e.target.value })} className="app-select min-w-[14rem]">
           <option value="">All Owners</option>
           {owners.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
-        <button onClick={applyFilters} className="bg-green-600 text-white px-4 py-2 rounded">Apply Filters</button>
-        <button onClick={resetFilters} className="bg-gray-500 text-white px-4 py-2 rounded">Reset</button>
-        <CSVLink data={dataForExport} headers={headers} filename="revenue_data.csv" className="bg-blue-600 text-white px-3 py-2 rounded"
+        <button onClick={applyFilters} className="app-button-primary">Apply Filters</button>
+        <button onClick={resetFilters} className="app-button-secondary">Reset</button>
+        <CSVLink data={dataForExport} headers={headers} filename="revenue_data.csv" className="app-button-secondary"
           target="_blank"
         >
           Export CSV
         </CSVLink>
       </div>
+      </section>
 
       {filterDraft.owner && (
-        <div className="bg-purple-50 border border-purple-200 text-purple-800 rounded-lg px-4 py-3 mb-4 text-sm">
+        <div className="app-card-soft border-violet-200 px-4 py-3 text-sm text-violet-800">
           Showing results for owner ID {filterDraft.owner}: {safeArray.length} order(s). Net revenue {totalRevenue.toLocaleString()} KES.
         </div>
       )}
 
-      <section className="bg-white shadow rounded-lg p-6 overflow-x-auto">
-        <h2 className="text-xl font-semibold mb-4 text-purple-700">Order Revenue Breakdown</h2>
+      <section className="app-card p-6 overflow-x-auto">
+        <h2 className="app-section-title mb-4">Order Revenue Breakdown</h2>
         <div className="max-h-[70vh] overflow-auto">
-        <table className="min-w-full table-auto text-sm text-center">
-          <thead className="sticky top-0 z-10 bg-white">
-            <tr className="text-gray-600 border-b">
+        <table className="app-table table-auto text-center">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-violet-100">
               <th className="py-2 px-4">Order #</th>
               <th className="py-2 px-4">Date</th>
               <th className="py-2 px-4">Product</th>
@@ -274,7 +284,7 @@ const RevenueDashboard = () => {
             {paged.map((order) => {
               const revenue = (order.total_amount || 0) - (order.expenses || 0) - (order.commission || 0);
               return (
-                <tr key={order.id} className="border-t hover:bg-gray-50">
+                <tr key={order.id}>
                   <td className="py-2 px-4 font-medium text-purple-700">{order.order_number || `ORD-${order.id}`}</td>
                   <td className="py-2 px-4">{order.date ? new Date(order.date).toISOString().slice(0,10) : ""}</td>
                   <td className="py-2 px-4">{order.product_description}</td>
@@ -288,7 +298,7 @@ const RevenueDashboard = () => {
                 </tr>
               );
             })}
-            <tr className="font-bold border-t bg-gray-100">
+            <tr className="font-bold border-t bg-violet-50/70">
               <td colSpan="6">Totals</td>
               <td>{totalAmount.toLocaleString()} KES</td>
               <td className="text-red-600">{totalExpenses.toLocaleString()} KES</td>
@@ -307,8 +317,8 @@ const RevenueDashboard = () => {
         />
       </section>
 
-      <section className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4 text-purple-700">Monthly Revenue Chart</h2>
+      <section className="app-card p-6">
+        <h2 className="app-section-title mb-4">Monthly Revenue Chart</h2>
         <Bar data={chartData} />
       </section>
     </div>
@@ -316,13 +326,22 @@ const RevenueDashboard = () => {
 };
 
 const SummaryCard = ({ label, value, color, bold }) => (
-  <div className="bg-white p-4 rounded-lg shadow">
-    <h2 className="text-sm text-gray-500">{label}</h2>
-    <p className={`text-xl ${bold ? "font-bold" : "font-semibold"} text-${color}`}>
+  <div className="app-stat-card">
+    <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-purple-500" />
+    <h2 className="app-stat-label">{label}</h2>
+    <p
+      className={`text-xl ${bold ? "font-bold" : "font-semibold"} ${
+        {
+          "gray-700": "text-violet-950",
+          "red-600": "text-rose-600",
+          "yellow-600": "text-amber-600",
+          "green-600": "text-emerald-600",
+        }[color] || "text-violet-950"
+      }`}
+    >
       {value.toLocaleString()} KES
     </p>
   </div>
 );
 
 export default RevenueDashboard;
-import Pagination from "../../components/Pagination";

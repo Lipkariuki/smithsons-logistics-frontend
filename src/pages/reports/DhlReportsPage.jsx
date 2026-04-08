@@ -196,16 +196,16 @@ const DhlReportsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="app-page">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-blue-700">DHL Payout Reports</h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="app-title">DHL Payout Reports</h1>
+          <p className="app-subtitle">
             Upload DHL monthly files, review revenue, and generate partner payslips.
           </p>
         </div>
         <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-          <span className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition">
+          <span className="app-button-primary">
             {uploading ? "Uploading..." : "Upload DHL Excel"}
           </span>
           <input
@@ -219,17 +219,17 @@ const DhlReportsPage = () => {
       </div>
 
       {(error || message) && (
-        <div className={`text-sm ${error ? "text-red-600" : "text-green-700"}`}>
+        <div className={error ? "app-alert-error" : "app-alert-success"}>
           {error || message}
         </div>
       )}
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-3">
+      <section className="app-card-soft p-4 space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Owner</label>
+            <label className="text-xs font-medium text-violet-700">Owner</label>
             <select
-              className="border rounded px-3 py-2"
+              className="app-select"
               value={ownerId}
               onChange={(e) => setOwnerId(e.target.value)}
             >
@@ -242,9 +242,9 @@ const DhlReportsPage = () => {
             </select>
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Vehicle</label>
+            <label className="text-xs font-medium text-violet-700">Vehicle</label>
             <select
-              className="border rounded px-3 py-2"
+              className="app-select"
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
             >
@@ -257,26 +257,26 @@ const DhlReportsPage = () => {
             </select>
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Start date</label>
+            <label className="text-xs font-medium text-violet-700">Start date</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="app-input"
             />
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">End date</label>
+            <label className="text-xs font-medium text-violet-700">End date</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="app-input"
             />
           </div>
           <button
             onClick={fetchSummary}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            className="app-button-primary"
             disabled={loading}
           >
             {loading ? "Loading..." : "Refresh"}
@@ -284,11 +284,11 @@ const DhlReportsPage = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-3">
-        <h2 className="text-lg font-semibold text-gray-800">DHL Monthly Summary</h2>
+      <section className="app-card p-4 space-y-3">
+        <h2 className="app-section-title">DHL Monthly Summary</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600">
+          <table className="app-table">
+            <thead>
               <tr>
                 <th className="px-4 py-2 text-left">Vehicle</th>
                 <th className="px-4 py-2 text-left">Owner</th>
@@ -302,8 +302,8 @@ const DhlReportsPage = () => {
             </thead>
             <tbody>
               {summary.map((row) => (
-                <tr key={`${row.vehicle_id}-${row.plate_number}`} className="border-t">
-                  <td className="px-4 py-2 font-medium text-blue-700">{row.plate_number}</td>
+                <tr key={`${row.vehicle_id}-${row.plate_number}`}>
+                  <td className="px-4 py-2 font-medium text-violet-700">{row.plate_number}</td>
                   <td className="px-4 py-2">{row.owner_name || "—"}</td>
                   <td className="px-4 py-2 text-right">{row.order_count}</td>
                   <td className="px-4 py-2 text-right">{formatMoney(row.distribution_cost)}</td>
@@ -331,13 +331,13 @@ const DhlReportsPage = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-xl shadow p-4 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-800">Generate Payslip</h2>
+      <section className="app-card p-4 space-y-4">
+        <h2 className="app-section-title">Generate Payslip</h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Vehicle</label>
+            <label className="text-xs font-medium text-violet-700">Vehicle</label>
             <select
-              className="border rounded px-3 py-2"
+              className="app-select"
               value={payslipVehicleId}
               onChange={(e) => setPayslipVehicleId(e.target.value)}
             >
@@ -350,20 +350,20 @@ const DhlReportsPage = () => {
             </select>
           </div>
           <div className="flex flex-col">
-            <label className="text-xs text-gray-500">Commission rate</label>
+            <label className="text-xs font-medium text-violet-700">Commission rate</label>
             <input
               type="number"
               step="0.01"
               min="0"
               value={commissionRate}
               onChange={(e) => setCommissionRate(e.target.value)}
-              className="border rounded px-3 py-2"
+              className="app-input"
             />
           </div>
           <div className="flex items-end gap-3">
             <button
               onClick={savePayslip}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              className="app-button-primary"
               disabled={savingPayslip}
             >
               {savingPayslip ? "Saving..." : payslip ? "Update Payslip" : "Create Payslip"}
@@ -372,13 +372,13 @@ const DhlReportsPage = () => {
               <>
                 <button
                   onClick={downloadPayslip}
-                  className="border border-blue-200 text-blue-700 px-4 py-2 rounded hover:bg-blue-50"
+                  className="app-button-secondary"
                 >
                   Download PDF
                 </button>
                 <button
                   onClick={sendPayslip}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                  className="app-button-primary"
                 >
                   Store & Send
                 </button>
@@ -389,10 +389,10 @@ const DhlReportsPage = () => {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium text-gray-700">Monthly Expenses</h3>
+            <h3 className="font-medium text-violet-900">Monthly Expenses</h3>
             <button
               onClick={addExpense}
-              className="text-sm text-blue-700 hover:underline"
+              className="text-sm font-medium text-violet-700 hover:underline"
               type="button"
             >
               Add expense
@@ -406,19 +406,19 @@ const DhlReportsPage = () => {
                 placeholder="Expense name"
                 value={item.name}
                 onChange={(e) => updateExpense(idx, "name", e.target.value)}
-                className="border rounded px-3 py-2"
+                className="app-input"
               />
               <input
                 type="number"
                 placeholder="Amount"
                 value={item.amount}
                 onChange={(e) => updateExpense(idx, "amount", e.target.value)}
-                className="border rounded px-3 py-2"
+                className="app-input"
               />
               <div className="flex items-center">
                 <button
                   onClick={() => removeExpense(idx)}
-                  className="text-sm text-red-600 hover:underline"
+                  className="text-sm font-medium text-rose-600 hover:underline"
                   type="button"
                   disabled={expenses.length <= 1}
                 >
@@ -430,19 +430,19 @@ const DhlReportsPage = () => {
         </div>
 
         {payslip && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+          <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4 text-sm text-violet-900">
             <p className="font-semibold">Payslip totals</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
               <div>
-                <span className="text-xs text-blue-700">Total Revenue</span>
+                <span className="text-xs text-violet-700">Total Revenue</span>
                 <p className="font-medium">{formatMoney(payslip.total_revenue)}</p>
               </div>
               <div>
-                <span className="text-xs text-blue-700">Commission</span>
+                <span className="text-xs text-violet-700">Commission</span>
                 <p className="font-medium">{formatMoney(payslip.commission_amount)}</p>
               </div>
               <div>
-                <span className="text-xs text-blue-700">Net Pay</span>
+                <span className="text-xs text-violet-700">Net Pay</span>
                 <p className="font-medium">{formatMoney(payslip.net_pay)}</p>
               </div>
             </div>

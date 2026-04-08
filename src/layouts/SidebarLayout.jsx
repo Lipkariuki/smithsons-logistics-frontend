@@ -55,9 +55,9 @@ const SidebarLayout = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-gray-100 text-[15px]">
+    <div className="flex min-h-screen bg-transparent text-[15px]">
       {/* Sidebar */}
-      <aside className="w-72 xl:w-80 bg-white border-r p-5 shadow-sm flex flex-col sticky top-0 h-screen overflow-y-auto flex-shrink-0">
+      <aside className="w-72 xl:w-80 border-r border-violet-100 bg-white/90 p-5 shadow-[0_18px_40px_-24px_rgba(88,28,135,0.25)] backdrop-blur-sm flex flex-col sticky top-0 h-screen overflow-y-auto flex-shrink-0">
         {/* Brand */}
         <div className="mb-5">
           <div className="flex items-center gap-3">
@@ -69,8 +69,8 @@ const SidebarLayout = () => {
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
             <div>
-              <h1 className="text-xl font-semibold text-purple-700 leading-tight">Smithsons Logistics</h1>
-              <p className="text-xs text-gray-500">Powering Every Trip. Empowering Every Partner.</p>
+              <h1 className="text-xl font-semibold text-violet-800 leading-tight">Smithsons Logistics</h1>
+              <p className="text-xs text-violet-500">Powering Every Trip. Empowering Every Partner.</p>
             </div>
           </div>
         </div>
@@ -82,7 +82,7 @@ const SidebarLayout = () => {
             to="/admin/dashboard"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-base transition ${
-                isActive ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-purple-50"
+                isActive ? "bg-violet-100 text-violet-800" : "text-slate-700 hover:bg-violet-50"
               }`
             }
           >
@@ -96,7 +96,7 @@ const SidebarLayout = () => {
               to={item.path}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-lg text-base transition ${
-                  isActive ? "bg-purple-100 text-purple-700" : "text-gray-700 hover:bg-purple-50"
+                  isActive ? "bg-violet-100 text-violet-800" : "text-slate-700 hover:bg-violet-50"
                 }`
               }
             >
@@ -110,8 +110,8 @@ const SidebarLayout = () => {
               onClick={() => setShowReportsMenu((prev) => !prev)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-base transition ${
                 location.pathname.startsWith("/admin/reports")
-                  ? "bg-purple-100 text-purple-700"
-                  : "text-gray-700 hover:bg-purple-50"
+                  ? "bg-violet-100 text-violet-800"
+                  : "text-slate-700 hover:bg-violet-50"
               }`}
               type="button"
             >
@@ -129,7 +129,7 @@ const SidebarLayout = () => {
                   to="/admin/reports/internal"
                   className={({ isActive }) =>
                     `block px-3 py-2 rounded-md text-sm transition ${
-                      isActive ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-purple-50"
+                      isActive ? "bg-violet-50 text-violet-800" : "text-slate-600 hover:bg-violet-50"
                     }`
                   }
                 >
@@ -139,7 +139,7 @@ const SidebarLayout = () => {
                   to="/admin/reports/dhl"
                   className={({ isActive }) =>
                     `block px-3 py-2 rounded-md text-sm transition ${
-                      isActive ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-purple-50"
+                      isActive ? "bg-violet-50 text-violet-800" : "text-slate-600 hover:bg-violet-50"
                     }`
                   }
                 >
@@ -149,7 +149,7 @@ const SidebarLayout = () => {
                   to="/admin/reports/dhl-reconciliation"
                   className={({ isActive }) =>
                     `block px-3 py-2 rounded-md text-sm transition ${
-                      isActive ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-purple-50"
+                      isActive ? "bg-violet-50 text-violet-800" : "text-slate-600 hover:bg-violet-50"
                     }`
                   }
                 >
@@ -163,18 +163,18 @@ const SidebarLayout = () => {
         {/* User actions */}
         <div className="mt-auto pt-4 border-t">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700">
+            <div className="h-8 w-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700">
               <User size={16} />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-800">Admin</p>
-              <p className="text-xs text-gray-500">Logged in</p>
+              <p className="text-sm font-medium text-violet-950">{currentUser?.name || "Admin"}</p>
+              <p className="text-xs text-violet-500">{currentUser?.role || "Logged in"}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-2">
             <NavLink
               to="/admin/settings"
-              className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:bg-purple-50 text-gray-700"
+              className="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-md hover:bg-violet-50 text-slate-700"
             >
               <Settings size={16} /> Settings
             </NavLink>
