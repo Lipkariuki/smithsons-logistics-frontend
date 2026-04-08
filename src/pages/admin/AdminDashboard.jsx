@@ -58,6 +58,7 @@ const AdminDashboard = () => {
   const [fuelState, setFuelState] = useState(createInitialFuelState);
   const [selectedMonth, setSelectedMonth] = useState(CURRENT_MONTH_KEY);
   const [fuelSummaryTotal, setFuelSummaryTotal] = useState(0);
+  const [expenseSummaryTotal, setExpenseSummaryTotal] = useState(0);
 
   const fetchOrders = () => {
     axiosAuth.get("/admin/orders")
@@ -279,22 +280,28 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     let mounted = true;
-    const params = { page: 1, per_page: 1, kind: "fuel" };
+    const periodParams = { page: 1, per_page: 1 };
     if (selectedMonth) {
       const { start, end } = getMonthBounds(selectedMonth);
-      params.start_date = start;
-      params.end_date = end;
+      periodParams.start_date = start;
+      periodParams.end_date = end;
     }
-    axiosAuth
-      .get("/expenses/", { params })
-      .then((res) => {
+
+    Promise.all([
+      axiosAuth.get("/expenses/", { params: { ...periodParams, kind: "fuel" } }),
+      axiosAuth.get("/expenses/", { params: { ...periodParams, kind: "other" } }),
+    ])
+      .then(([fuelRes, expenseRes]) => {
         if (!mounted) return;
-        setFuelSummaryTotal(Number(res.data?.total_amount || 0));
+        setFuelSummaryTotal(Number(fuelRes.data?.total_amount || 0));
+        setExpenseSummaryTotal(Number(expenseRes.data?.total_amount || 0));
       })
       .catch(() => {
         if (!mounted) return;
         setFuelSummaryTotal(0);
+        setExpenseSummaryTotal(0);
       });
+
     return () => {
       mounted = false;
     };
@@ -304,16 +311,15 @@ const AdminDashboard = () => {
     const totals = visibleOrders.reduce(
       (acc, order) => {
         acc.tripRevenue += Number(order.total_amount || 0);
-        acc.expenses += Number(order.expenses || 0);
         acc.commission += Number(order.commission || 0);
         return acc;
       },
-      { tripRevenue: 0, expenses: 0, commission: 0 }
+      { tripRevenue: 0, commission: 0 }
     );
     totals.netRevenue =
-      totals.tripRevenue - totals.expenses - totals.commission - fuelSummaryTotal;
+      totals.tripRevenue - expenseSummaryTotal - totals.commission - fuelSummaryTotal;
     return totals;
-  }, [visibleOrders, fuelSummaryTotal]);
+  }, [visibleOrders, expenseSummaryTotal, fuelSummaryTotal]);
 
   const editingOrder = useMemo(
     () => (editRowId ? orders.find((o) => o.id === editRowId) : null),
@@ -523,7 +529,7 @@ const AdminDashboard = () => {
           <div className="app-stat-card">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-rose-400 to-rose-500" />
             <h3 className="app-stat-label">Expenses</h3>
-            <p className="text-2xl font-semibold text-red-600">{summary.expenses.toLocaleString()} KES</p>
+            <p className="text-2xl font-semibold text-red-600">{expenseSummaryTotal.toLocaleString()} KES</p>
           </div>
           <div className="app-stat-card">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-400 to-orange-500" />
