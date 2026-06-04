@@ -9,7 +9,7 @@ import OrdersDashboard from "./pages/orders/OrdersDashboard";
 import OwnerDashboard from "./pages/partners/OwnerDashboard";
 import AdminTripsPage from "./pages/admin/AdminTripsPage";
 import AdminFleetPage from "./pages/admin/AdminFleetPage";
-import AdminDriversPage from "./pages/admin/AdminDriversPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
 
 import DriverHomePage from "./pages/driver/DriverHomePage";
 import DriverTripsPage from "./pages/driver/DriverTripsPage";
@@ -42,7 +42,8 @@ const App = () => {
         <Route path="orders" element={<OrdersDashboard />} />
         <Route path="trips" element={<AdminTripsPage />} />
         <Route path="fleet" element={<AdminFleetPage />} />
-        <Route path="drivers" element={<AdminDriversPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="drivers" element={<Navigate to="/admin/users" replace />} />
         <Route path="expenses" element={<ExpensesPage />} />
         <Route path="reports" element={<ReportsHub />} />
         <Route path="reports/internal" element={<ReportsPage />} />
