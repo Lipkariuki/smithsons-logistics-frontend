@@ -11,7 +11,6 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
     User,
     ChevronDown,
     LayoutDashboard,
-    Users
   } from "lucide-react";
 import { Calculator as CalculatorIcon } from "lucide-react";
 import axiosAuth from "../utils/axiosAuth";
@@ -47,7 +46,7 @@ const SidebarLayout = () => {
       { name: "Platform Earnings", icon: <Wallet size={18} />, path: "/admin/platform-earnings" },
       { name: "Orders", icon: <FileText size={18} />, path: "/admin/orders" },
       { name: "Trips", icon: <Truck size={18} />, path: "/admin/trips" },
-      { name: "Fleet", icon: <Users size={18} />, path: "/admin/fleet" },
+      { name: "Fleet Management", icon: <Truck size={18} />, path: "/admin/fleet" },
       { name: "Users", icon: <User size={18} />, path: "/admin/users" },
       { name: "Expenses", icon: <BarChart2 size={18} />, path: "/admin/expenses" },
       // { name: "Calculator", icon: <CalculatorIcon size={18} />, path: "/admin/calculator" },
