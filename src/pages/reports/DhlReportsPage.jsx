@@ -346,7 +346,8 @@ const DhlReportsPage = () => {
       />
 
       <section className="app-card p-4 space-y-4">
-        <h2 className="app-section-title">Generate Payslip</h2>
+        <h2 className="app-section-title">Manual payslip</h2>
+        <p className="text-sm text-slate-600">For payslips based on Net Summary workbook expenses, use the monthly report above. Confirm the truck, then choose Generate / download truck statement. This form is for manually entered payslips.</p>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="flex flex-col">
             <label className="text-xs font-medium text-violet-700">Vehicle</label>
