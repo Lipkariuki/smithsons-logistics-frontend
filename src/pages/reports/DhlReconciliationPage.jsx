@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import axiosAuth from "../../utils/axiosAuth";
+import DhlReconciliationDetails from "./DhlReconciliationDetails";
 
 const currency = new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES" });
 
@@ -41,6 +42,7 @@ const DhlReconciliationPage = () => {
 
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
+  const [financialVersion, setFinancialVersion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [report, setReport] = useState(null);
@@ -52,6 +54,8 @@ const DhlReconciliationPage = () => {
     try {
       const res = await axiosAuth.get("/dhl-reports/reconciliation", {
         params: {
+          include_details: true,
+          ...(financialVersion ? { financial_version: financialVersion } : {}),
           start_date: startDate,
           end_date: endDate,
         },
@@ -59,7 +63,7 @@ const DhlReconciliationPage = () => {
       setReport(res.data);
       setSelectedRowKey("");
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to load reconciliation report");
+      setError(typeof err.response?.data?.detail === "string" ? err.response.data.detail : "Failed to load reconciliation report. Check the dates and selected version, then retry.");
     } finally {
       setLoading(false);
     }
@@ -103,6 +107,9 @@ const DhlReconciliationPage = () => {
               className="app-input"
             />
           </div>
+          <label className="text-xs font-medium text-violet-700">Expense version (optional)
+            <input type="number" min="1" step="1" className="app-input block" aria-label="Expense report version" value={financialVersion} onChange={event => setFinancialVersion(event.target.value)} placeholder="Latest saved version" />
+          </label>
           <button
             onClick={fetchReport}
             className="app-button-primary"
@@ -142,6 +149,8 @@ const DhlReconciliationPage = () => {
               );
             })}
           </section>
+
+          <DhlReconciliationDetails key={`${report.period_start}-${report.period_end}-${report.details?.source?.financial_version}`} details={report.details} />
 
           {selectedRow && (
             <section className="rounded-2xl border border-violet-100 bg-white shadow-[0_18px_40px_-24px_rgba(88,28,135,0.45)] overflow-hidden">

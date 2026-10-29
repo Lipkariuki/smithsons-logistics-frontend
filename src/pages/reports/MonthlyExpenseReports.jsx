@@ -24,7 +24,7 @@ function ComparisonTable({ row }) {
   </table><p className="text-xs text-slate-500 mt-2">Difference means Smithsons calculated minus manual. One-cent differences are rounding-sized, not exact matches.</p></div>;
 }
 
-function TruckTable({ report, editable, config, change, disabled }) {
+function TruckTable({ report, editable, config, change, disabled, onStatement, onConfirmTruck }) {
   const [expanded, setExpanded] = useState({});
   useEffect(() => setExpanded({}), [report.id, report.status, report.reporting_month]);
   return <div className="overflow-x-auto"><table className="app-table min-w-[920px]" aria-label="Monthly expense truck figures">
@@ -33,15 +33,21 @@ function TruckTable({ report, editable, config, change, disabled }) {
       const key = `${row.source_worksheet}-${row.source_row}`;
       const issues = rowIssues(row);
       const blocking = row.issues.some(i => i.blocking);
+      const approval = row.truck_confirmation;
       const noRecords = !row.dhl_source_snapshot?.length;
       return <React.Fragment key={key}>
         <tr>
           <td><button type="button" className="text-violet-700 font-semibold underline underline-offset-4" aria-label={`Details for ${row.normalized_plate}`} aria-expanded={!!expanded[key]} onClick={() => setExpanded(previous => ({ ...previous, [key]: !previous[key] }))}>{row.normalized_plate}</button><p className="text-xs text-slate-500 mt-1">{row.vehicle_owner_snapshot?.owner_name || 'Owner unassigned'}</p></td>
           {['gross', 'operating_expenses', 'commission_base', 'commission', 'net_payable'].map(field => <td key={field} className={`whitespace-nowrap ${negative(row[field]) ? 'text-rose-700 font-semibold' : ''}`}>{formatKes(row[field])}</td>)}
-          <td><span className={`text-xs font-semibold ${blocking ? 'text-rose-700' : issues.length ? 'text-amber-800' : 'text-emerald-700'}`}>{blocking ? 'Needs attention' : issues.length ? 'Review warning' : 'Checked'}</span></td>
+          <td><span className={`text-xs font-semibold ${blocking ? 'text-rose-700' : issues.length ? 'text-amber-800' : 'text-emerald-700'}`}>{approval ? ({confirmed:'Confirmed',historical_confirmed:'Historical confirmed',superseded:'Superseded',needs_review:'Needs review',pending:'Pending confirmation'})[approval.status] : blocking ? 'Needs attention' : issues.length ? 'Review warning' : 'Checked'}</span>{approval?.current && approval.current.expense_row_id !== row.id && <p className="text-xs text-violet-800">Confirmed version {approval.current.report_version} remains available.</p>}</td>
         </tr>
         {expanded[key] && <tr><td colSpan={7} className="bg-violet-50/40">
           <div className="space-y-4 min-w-0">
+            {approval?.can_confirm && !editable && <button type="button" className="app-button-primary" disabled={disabled} onClick={() => onConfirmTruck(row)}>Confirm this truck</button>}
+            {approval?.record && <p className="text-sm text-violet-800">Confirmed: {approval.record.confirmed_at}. Review reason: {approval.record.reason}</p>}
+            {approval?.review_issue && <p className="text-sm text-amber-900">{approval.review_issue}</p>}
+            {(approval?.record || ['confirmed', 'superseded'].includes(report.status)) && row.id && <button type="button" className="app-button-secondary" disabled={disabled} onClick={() => onStatement(row)}>Generate / download truck statement</button>}
+            {approval?.current && approval.current.expense_row_id !== row.id && <button type="button" className="app-button-secondary" disabled={disabled} onClick={() => onStatement({...row,id:approval.current.expense_row_id},approval.current.report_version)}>Download confirmed version {approval.current.report_version} statement</button>}
             {issues.length > 0 && <ul className="list-disc pl-5 text-sm space-y-1">{issues.map((issue, index) => <li key={`${issue.code}-${index}`} className={issue.blocking ? 'text-rose-700' : 'text-amber-900'}>{issueText(issue, row)}</li>)}</ul>}
             <fieldset disabled={disabled} className="space-y-3">
               <legend className="font-semibold text-violet-900 mb-2">Expense breakdown</legend>
@@ -49,12 +55,8 @@ function TruckTable({ report, editable, config, change, disabled }) {
                 {Object.entries(row.deductions).map(([category, expense]) => <div key={category} className="bg-white border border-violet-100 rounded-xl p-3">
                   <p className="font-medium text-sm">{expense.label}</p><p className="mt-1">{formatKes(expense.amount)}</p>
                   {expense.resolution === 'absent_optional_category' && <p className="text-xs text-amber-800">Column absent; zero assumed with a recorded warning.</p>}
-                  {editable && expense.source_cell && <div className="mt-2 space-y-2">
-                    <label className="block text-xs text-slate-600">{expense.amount == null ? 'Enter the missing amount' : 'Correction, if needed'}
-                      <input type="text" inputMode="decimal" className="app-input mt-1 w-full" aria-label={`Amount for ${row.normalized_plate} ${expense.label}`} value={config.corrections[expense.source_cell] ?? ''} placeholder={expense.amount == null ? 'Enter amount' : 'Leave blank to keep workbook amount'} onChange={event => change('corrections', { ...config.corrections, [expense.source_cell]: event.target.value })} />
-                    </label>
-                    {expense.amount == null && <button type="button" className="app-button-secondary text-xs" onClick={() => change('corrections', { ...config.corrections, [expense.source_cell]: '0.00' })}>Confirm zero for {expense.label}</button>}
-                  </div>}
+                  {expense.resolution === 'blank_to_zero' && <p className="text-xs text-amber-800">Blank spreadsheet cell interpreted as zero; recorded in the import audit.</p>}
+                  {editable && <p className="text-xs text-slate-600 mt-2">Amounts come from this workbook. Upload a corrected workbook to change them.</p>}
                 </div>)}
               </div>
               {editable && noRecords && <div className="border border-amber-200 rounded-xl bg-amber-50 p-3 space-y-2">
@@ -175,7 +177,7 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
   function newVersion() {
     const decisions = report.decisions || {};
     setConfig({ ...initialConfig(), mappings: decisions.approved_mappings || {},
-      corrections: decisions.corrections || {}, noActivity: decisions.verified_no_activity || {},
+      corrections: {}, noActivity: decisions.verified_no_activity || {},
       dateDispositions: decisions.date_dispositions || {},
       previousId: report.id, storedId: report.id, storedHash: report.file_sha256,
       sheetName: decisions.sheet_name || '', referenceColumns: decisions.reference_columns || {} });
@@ -203,6 +205,30 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
     run('confirm', () => axiosAuth.post(`${ROOT}/expense-imports/${report.id}/confirm`).then(response => response.data), data => {
       closeDialog(); setReport(data); setNotice(`Monthly report version ${data.version} confirmed.`);
     }, closeDialog);
+  }
+  function confirmTruck(row) {
+    const reason = window.prompt(`How did you verify ${row.normalized_plate}, report version ${report.version}? Record the review reason.`);
+    if (reason === null) return;
+    if (!reason.trim()) { setError('Enter a review reason before confirming this truck.'); return; }
+    const previous = row.truck_confirmation.current;
+    if (!window.confirm(`Confirm ${row.normalized_plate}, version ${report.version}: gross ${formatKes(row.gross)}, expenses ${formatKes(row.operating_expenses)}, commission ${formatKes(row.commission)}, net ${formatKes(row.net_payable)}.${previous ? ` This replaces its approval from version ${previous.report_version}; existing statements stay in history.` : ''} Other trucks will remain unchanged.`)) return;
+    run('confirm-truck', async () => {
+      await axiosAuth.post(`${ROOT}/expense-rows/${row.id}/confirm`, {reason:reason.trim(),expected_current_confirmation_id:row.truck_confirmation.expected_current_confirmation_id});
+      return (await axiosAuth.get(`${ROOT}/expense-imports/${report.id}`)).data;
+    }, data => { setReport(data); setNotice(`${row.normalized_plate} confirmed independently. Other trucks remain unchanged.`); });
+  }
+  function truckStatement(row, sourceVersion = report.version) {
+    if (!window.confirm(`Generate or retrieve the stored statement for ${row.normalized_plate}, report version ${sourceVersion}? This uses only that confirmed financial snapshot.`)) return;
+    run('statement', async () => {
+      const { data: document } = await axiosAuth.post(`${ROOT}/monthly-statement-documents/from-row/${row.id}`);
+      const response = await axiosAuth.get(`${ROOT}/monthly-statement-documents/${document.id}/pdf`, { responseType: 'blob' });
+      return { blob: response.data, filename: `smithsons_monthly_transport_statement_${document.id}.pdf` };
+    }, result => {
+      const url = URL.createObjectURL(result.blob); const anchor = document.createElement('a');
+      anchor.href = url; anchor.download = result.filename; document.body.appendChild(anchor); anchor.click(); anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      setNotice(`Stored truck statement downloaded for report version ${sourceVersion}.`);
+    });
   }
   function download(format) {
     run(`export-${format}`, async () => {
@@ -233,7 +259,7 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
     {uploadOpen && <div className="border border-violet-200 rounded-2xl bg-violet-50/30 p-4 space-y-4">
       <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold text-violet-900">Upload Expenses Excel</h3><p className="text-sm text-slate-600 mt-1">Choose the month and workbook, then check the preview before saving.</p></div><button type="button" className="app-button-secondary" disabled={!!busy} onClick={() => { clearEditor(); onCloseUpload(); }}>Cancel upload</button></div>
       <fieldset disabled={!!busy} className="space-y-4">
-        {config.storedId && <p className="text-sm text-violet-800">Using the original saved expense workbook. Corrections create a new version and preserve the original.</p>}
+        {config.storedId && <p className="text-sm text-violet-800">Using the original saved expense workbook. Category and date reviews create a new version. To change expense amounts, choose a replacement workbook.</p>}
         <label className="block text-sm font-medium">Expense workbook (.xlsx, up to 20 MB)
           <input ref={fileInput} type="file" accept=".xlsx" className="app-input block mt-1 w-full" aria-label="Expense workbook" onChange={event => {
             setFile(event.target.files?.[0] || null); setPreview(null); setDirty(true); setConfig(previous => ({ ...initialConfig(), previousId: previous.previousId, mappings: previous.previousId ? previous.mappings : {} })); setError('');
@@ -296,7 +322,13 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
       {(display.issues?.length > 0 || display.decisions?.historical_review?.out_of_month_records?.length > 0) && <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm space-y-1" aria-label="Workbook review warnings"><ul className="list-disc pl-5 space-y-1">{display.issues.map((issue, index) => <li key={index} className={issue.blocking ? 'text-rose-700' : 'text-amber-900'}>{issueText(issue)}</li>)}{display.decisions?.historical_review?.out_of_month_records?.length > 0 && <li>Some DHL records are dated outside the selected reporting month. Review these separately; they have not been added to this month’s revenue.</li>}</ul></div>}
       {display.rows.some(row => row.issues.some(issue => issue.blocking)) && <p className="text-sm text-rose-700">Some truck rows need attention. Select a truck registration to review its issues and expense amounts.</p>}
       <SourceDateReview report={display} editable={uploadOpen && !!preview} config={config} change={configChanged} disabled={!!busy} />
-      <TruckTable report={display} editable={uploadOpen && !!preview && (!!file || !!config.storedId)} config={config} change={configChanged} disabled={!!busy} />
+      {display.truck_confirmation_summary && <p className="text-sm text-violet-800">This report version: {display.truck_confirmation_summary.confirmed_count} truck(s) confirmed, {display.truck_confirmation_summary.pending_count} pending or needing review. {display.truck_confirmation_summary.frozen ? 'The source version is frozen. Corrections require a new workbook version.' : 'Confirm verified trucks independently; other trucks can remain under review.'} Monthly totals remain totals for this selected snapshot.</p>}
+      {!!display.truck_confirmation_summary?.current_approvals?.length && <details><summary className="font-semibold text-violet-900 cursor-pointer">Current approved trucks across report versions ({display.truck_confirmation_summary.current_approvals.length})</summary>
+        <p className="text-sm text-slate-600 mt-2">These frozen approvals remain valid even if a later workbook omits a truck. They are separate from the selected workbook totals and do not represent payments made.</p>
+        <div className="flex flex-wrap gap-3 text-sm mt-2">{["gross","operating_expenses","commission","net_payable"].map(key=><p key={key}>{FINANCIAL_LABELS[key]}: {formatKes(display.truck_confirmation_summary.current_approved_totals[key])}</p>)}</div>
+        <div className="overflow-x-auto"><table className="app-table" aria-label="Current approved truck versions"><thead><tr>{["Truck","Source version","Gross","Expenses","Commission","Net payable","Statement"].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{display.truck_confirmation_summary.current_approvals.map(approval=><tr key={approval.id}><td>{approval.normalized_plate}</td><td>{approval.report_version}</td>{["gross","operating_expenses","commission","net_payable"].map(key=><td key={key}>{formatKes(approval[key])}</td>)}<td><button type="button" className="app-button-secondary" disabled={!!busy} onClick={()=>truckStatement({id:approval.expense_row_id,normalized_plate:approval.normalized_plate},approval.report_version)}>Download confirmed statement</button></td></tr>)}</tbody></table></div>
+      </details>}
+      <TruckTable onConfirmTruck={confirmTruck} onStatement={truckStatement} report={display} editable={uploadOpen && !!preview && (!!file || !!config.storedId)} config={config} change={configChanged} disabled={!!busy} />
       <p className="text-xs text-slate-500">All figures are calculated by Smithsons. Commission is 7% of each truck’s positive balance after operating expenses. Negative balances are retained.</p>
     </div> : <p className="text-sm text-slate-600">Choose a month to view a saved report, or use Upload Expenses Excel to prepare a new report.</p>}
 

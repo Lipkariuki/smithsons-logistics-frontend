@@ -1,0 +1,21 @@
+/* Scoped fallback layout, consistent with the existing report cards and tables. */
+.dhl-reconciliation-details { min-width: 0; max-width: 100%; font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; color: #273248; line-height: 1.5; }
+.dhl-reconciliation-details > section { padding: 1rem; margin-top: 1rem; }
+.dhl-reconciliation-details :is(p,h2) { margin: 0; }
+.dhl-reconciliation-details .app-section-title { font-size: 1.15rem; }
+.dhl-reconciliation-details section > * + * { margin-top: .8rem; }
+.dhl-reconciliation-details .flex { display: flex; }
+.dhl-reconciliation-details .flex-wrap { flex-wrap: wrap; }
+.dhl-reconciliation-details .justify-between { justify-content: space-between; align-items: center; gap: .75rem; }
+.dhl-reconciliation-details .gap-6 { gap: 1.5rem; }
+.dhl-reconciliation-details .text-sm { font-size: .875rem; }
+.dhl-reconciliation-details .text-slate-600 { color: #475569; }
+.dhl-reconciliation-details .text-amber-900 { color: #78350f; }
+.dhl-reconciliation-details .text-emerald-700 { color: #047857; }
+.dhl-reconciliation-details .overflow-x-auto { overflow: auto; max-width: 100%; max-height: 34rem; }
+.dhl-reconciliation-details .app-table { font-size: .84rem; min-width: 1100px; }
+.dhl-reconciliation-details .app-table :is(th,td) { vertical-align: top; font-variant-numeric: tabular-nums; }
+.dhl-reconciliation-details .app-table thead { position: sticky; top: 0; background: #f7f5ff; }
+.dhl-reconciliation-details .whitespace-nowrap { white-space: nowrap; }
+.dhl-reconciliation-details summary { cursor: pointer; font-weight: 600; }
+.dhl-reconciliation-details select { font-family: inherit; margin-left: .4rem; }

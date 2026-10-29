@@ -20,18 +20,19 @@ function snapshot(options={}, { id, version=null, status='preview', versions=[] 
   const mapped = Object.hasOwn(options.approved_mappings || {},'TYRES');
   const duplicate = options.approved_mappings?.TYRES === 'Fuel';
   const tyres = mapped && options.approved_mappings.TYRES !== null;
-  const corrected = options.corrections?.D17 === '0.00';
+  const corrected = true; // Server workbook-only policy: blanks are audited zero.
   const verified = !!options.source_verification;
   const zero = !!options.verified_no_activity?.KCE726U;
   const ready = mapped && !duplicate && corrected && verified && zero && !(options.historical_review?.date_issues || []).some(row => !options.date_dispositions?.[String(row.source_row)]?.reason);
   const headers=[header(1,'TRUCK REG/NO','truck'),header(2,'FUEL','expense','fuel'),header(3,'BREAKAGES','expense','breakages'),header(4,'TELEMATICS & VSS','expense','telematics_vss'),header(5,'GPRS','expense','gprs'),header(6,'SHUNTING','expense','shunting'),header(7,'TYRES',mapped ? options.approved_mappings.TYRES === null ? 'ignored':'expense':'unknown',mapped ? 'tyres':null),header(8,'GROSS AMOUNT','ignored'),header(9,'7% COMMISSION','ignored'),header(10,'NET PAID','ignored'),header(11,'NET PAID I','ignored'),header(12,'NET PAID 2','ignored')];
   if(mapped) headers[6].approval_source='administrator';
   const makeRow=(plate, source_row, missing=false)=> {
-    const row={source_worksheet:'Sheet1',source_row,normalized_plate:plate,original_plate:plate,vehicle_id:missing?2:1,vehicle_owner_snapshot:{owner_name:'Sample Partner',owner_id:7},dhl_source_snapshot:missing?[]:[{id:1,total_revenue:'1000.00'}],revenue_status:missing ? zero?'verified_no_activity':'missing':'dhl_records',issues:[],deductions:{},comparisons:{}};
+    const row={id:source_row,source_worksheet:'Sheet1',source_row,normalized_plate:plate,original_plate:plate,vehicle_id:missing?2:1,vehicle_owner_snapshot:{owner_name:'Sample Partner',owner_id:7},dhl_source_snapshot:missing?[]:[{id:1,total_revenue:'1000.00'}],revenue_status:missing ? zero?'verified_no_activity':'missing':'dhl_records',issues:[],deductions:{},comparisons:{}};
     for(const [key,label,amount,column] of [['fuel','Fuel',missing?'50.00':'100.00','B'],['breakages','Breakages',missing?'0.00':'20.00','C'],['telematics_vss','Telematics & VSS',missing&&!corrected?null:missing?'0.00':'30.00','D'],['gprs','GPRS','0.00','E'],['shunting','Shunting',missing?'0.00':'50.00','F']]) row.deductions[key]={amount,label,source_cell:`${column}${source_row}`,resolution:'source'};
+    if(missing) row.deductions.telematics_vss.resolution='blank_to_zero';
     if(tyres) row.deductions.tyres={amount:missing?'0.00':'100.00',label:options.approved_mappings.TYRES,source_cell:`G${source_row}`,resolution:'source'};
     row.deductions.kasarani_ksm_fuel={amount:'0.00',label:'Kasarani & KSM Fuel',source_cell:null,resolution:'absent_optional_category'};
-    if(missing&&!corrected) row.issues.push(problem('blank_expense','','D17'));
+    if(missing) row.issues.push(problem('blank_expense_zero','Blank spreadsheet cell interpreted as zero','D17',false));
     if(missing&&!zero) row.issues.push(problem('revenue_unverified'),problem('dhl_missing','',null,false));
     if(!verified) row.issues.push(problem('dhl_incomplete'));
     if(missing&&zero) row.issues.push(problem('zero_revenue','',null,false),problem('negative_net_balance_review','',null,false));
@@ -64,6 +65,8 @@ async function setup({seed=false}={}) {
     const respond=(status,data)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
     if(state.delay)await new Promise(resolve=>setTimeout(resolve,state.delay));
     if(state.fail?.path===pathname){const error=state.fail;state.fail=null;return respond(error.status,error.data);}
+    if(pathname.startsWith('/dhl-reports/monthly-statement-documents/from-row/'))return respond(200,{id:77,expense_row_id:3});
+    if(pathname==='/dhl-reports/monthly-statement-documents/77/pdf')return route.fulfill({status:200,contentType:'application/pdf',body:Buffer.from('%PDF-1.4\nsynthetic test only')});
     if(pathname==='/users/me')return respond(200,{id:7,role:'admin',name:'Sample Admin'});
     if(pathname==='/users/')return respond(200,[{id:7,name:'Sample Partner'}]);
     if(pathname==='/vehicles/')return respond(200,[{id:1,plate_number:'KAA123B',owner_id:7}]);
@@ -118,7 +121,7 @@ async function completePreview(test,{comparison=false}={}) {
   await test.panel.getByLabel('Category name for TYRES').fill('Tyres');
   await test.panel.getByLabel('Expense review note').fill('Checked Tyres and confirmed missing telematics as zero');
   await test.panel.getByRole('button',{name:'Details for KCE726U'}).click();
-  await test.panel.getByRole('button',{name:'Confirm zero for Telematics & VSS'}).click();
+  assert.equal(await test.panel.getByRole('button',{name:'Confirm zero for Telematics & VSS'}).count(),0);
   assert.equal(await test.panel.getByRole('button',{name:'Save draft',exact:true}).isEnabled(),false);
   await test.panel.getByLabel('I verified that KCE726U had no business this month.').check();
   await test.panel.getByLabel('How did you verify no business?').fill('Dispatch register checked with the fleet manager');
@@ -148,7 +151,7 @@ test('upload, warnings, mapping, zero confirmation, manual comparison, save/conf
     if(process.env.FRONTEND_SCREENSHOT_DIR){await mkdir(process.env.FRONTEND_SCREENSHOT_DIR,{recursive:true});await t.panel.screenshot({path:path.join(process.env.FRONTEND_SCREENSHOT_DIR,'monthly-expenses-preview.png')});}
     await t.panel.getByRole('button',{name:'Save draft',exact:true}).click();
     await t.panel.getByText('Draft version 1 saved. Review it before confirming.',{exact:true}).waitFor();
-    assert.equal(t.state.records[0].decisions.corrections.D17,'0.00');
+    assert.deepEqual(t.state.records[0].decisions.corrections,{});
     assert.equal(Object.hasOwn(t.state.records[0].decisions,'net_payable'),false);
     await t.panel.getByRole('button',{name:'Confirm report',exact:true}).click();
     await t.page.getByRole('dialog').getByRole('button',{name:'Confirm this version'}).click();
@@ -172,7 +175,7 @@ test('saved history, corrected versions and superseded figures are distinct',asy
     await t.panel.getByLabel('I checked that the DHL upload covers the full reporting month.').check();
     await t.panel.getByLabel('How did you check the monthly DHL data?').fill('Statement rechecked');await t.panel.getByLabel('Expense review note').fill('Correcting saved version');
     await t.panel.getByRole('button',{name:'Preview expenses',exact:true}).click();await t.panel.getByRole('button',{name:'Details for KCE726U'}).click();
-    await t.panel.getByRole('button',{name:'Confirm zero for Telematics & VSS'}).click();await t.panel.getByLabel('I verified that KCE726U had no business this month.').check();await t.panel.getByLabel('How did you verify no business?').fill('Checked again');
+    assert.equal(await t.panel.getByRole('button',{name:'Confirm zero for Telematics & VSS'}).count(),0);await t.panel.getByLabel('I verified that KCE726U had no business this month.').check();await t.panel.getByLabel('How did you verify no business?').fill('Checked again');
     await t.panel.getByRole('button',{name:'Update preview',exact:true}).click();await t.page.waitForTimeout(100);await t.panel.getByRole('button',{name:'Save draft',exact:true}).click();
     await t.panel.getByText('Draft version 2 saved. Review it before confirming.',{exact:true}).waitFor();
     assert.equal(t.state.records[1].decisions.previous_version_id,1);
@@ -270,6 +273,35 @@ test('saved-workbook correction reviews explicit historical exclusions without a
     await t.panel.getByRole('button',{name:'Save draft',exact:true}).click();await t.panel.getByText(/Draft version 2 saved/).waitFor();
     const requests=t.state.requests.filter(r=>r.path.endsWith('/revise'));assert.equal(requests.length,2);
     assert.ok(requests.every(r=>!r.body.includes('name="file"')));assert.ok(requests.every(r=>r.body.includes('exclude_from_period')));
+    assert.deepEqual(t.state.errors,[]);
+  }finally{await t.context.close();}
+});
+
+test('confirmed snapshot truck statement requires explicit generation and downloads stored PDF', async()=>{
+  const t=await setup({seed:true});try{
+    await t.panel.getByRole('button',{name:'View saved report',exact:true}).click();
+    await t.panel.getByRole('button',{name:'Details for KAA123B'}).click();
+    t.page.once('dialog', dialog=>dialog.accept());
+    const downloaded=t.page.waitForEvent('download');
+    await t.panel.getByRole('button',{name:'Generate / download truck statement',exact:true}).click();
+    assert.equal((await downloaded).suggestedFilename(),'smithsons_monthly_transport_statement_77.pdf');
+    assert.equal(t.state.requests.filter(r=>r.path==='/dhl-reports/monthly-statement-documents/from-row/3').length,1);
+    assert.deepEqual(t.state.errors,[]);
+  }finally{await t.context.close();}
+});
+
+test('current approved versions stay separate from selected workbook figures',async()=>{
+  const t=await setup({seed:true});try{
+    t.state.records[0].truck_confirmation_summary={confirmed_count:1,pending_count:1,frozen:true,
+      current_approved_totals:{gross:'1000.00',operating_expenses:'300.00',commission:'49.00',net_payable:'651.00'},
+      current_approvals:[{id:88,expense_row_id:3,normalized_plate:'KAA123B',report_version:1,gross:'1000.00',operating_expenses:'300.00',commission:'49.00',net_payable:'651.00'}]};
+    await t.panel.getByRole('button',{name:'View saved report',exact:true}).click();
+    await t.panel.locator('summary').filter({hasText:'Current approved trucks across report versions'}).click();
+    const table=t.panel.getByRole('table',{name:'Current approved truck versions',exact:true});
+    assert.match(await table.innerText(),/KAA123B/);assert.match(await table.innerText(),/651.00/);
+    t.page.once('dialog',dialog=>dialog.accept());const download=t.page.waitForEvent('download');
+    await table.getByRole('button',{name:'Download confirmed statement',exact:true}).click();
+    assert.equal((await download).suggestedFilename(),'smithsons_monthly_transport_statement_77.pdf');
     assert.deepEqual(t.state.errors,[]);
   }finally{await t.context.close();}
 });

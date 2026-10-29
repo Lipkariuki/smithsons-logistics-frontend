@@ -36,6 +36,8 @@ export function cellLabel(row, cell) {
 export function issueText(issue, row) {
   const truck = row ? `${row.normalized_plate}: ` : '';
   const messages = {
+    blank_expense_zero: 'Blank spreadsheet expense interpreted as KES 0.00 and recorded in the audit.',
+    category_absent_zero: issue.message || 'Expense category absent from this workbook; KES 0.00 assumed.',
     optional_category_absent: 'Kasarani fuel column was not included. KES 0.00 assumed.',
     source_dates_unreviewed: 'Attach the raw trips workbook and review its dates before confirming.',
     source_manifest_mismatch: 'The raw trips workbook does not match the saved DHL records. Check which source was imported.',
