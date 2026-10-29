@@ -72,6 +72,7 @@ export default function SavedMonthlyFiles({month,onViewReport,onExpenseUpload,on
     {net.length>0&&<p className="text-sm">The saved expense workbook can be reused. A replacement or correction creates a new report version.</p>}
    </div></div>
    <p className="text-sm text-slate-700">Upload new DHL month imports revenue only when no records exist. Attach original workbook checks existing records without changing them. Replace existing DHL records is a separate guarded action; it can be blocked by historical manual payslips.</p>
+   {raw.length>0&&net.length>0&&!data.source_verified&&<p className="text-sm text-violet-900">To calculate payouts, choose “Review verification / reuse saved expenses”, check the full-month source and enter a review note, then update the preview and save a new draft. You do not need to upload either file again.</p>}
    <p className="text-xs text-slate-600">Files are private. Uploading does not confirm financial figures. Review source dates, select a truck in the report below, and confirm it only when verified.</p>
   </>}
  </section>;
