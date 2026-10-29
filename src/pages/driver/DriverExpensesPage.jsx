@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 import React, { useEffect, useState } from "react";
 import axios from "../../utils/axiosAuth";
 
@@ -16,7 +17,7 @@ const DriverExpensesPage = () => {
       const res = await axios.get("/driver/expenses");
       setExpenses(res.data);
     } catch (err) {
-      console.error("Error fetching expenses:", err);
+      logApiError("Error fetching expenses:", err);
       setError("Could not load your expenses.");
     }
   };
@@ -26,7 +27,7 @@ const DriverExpensesPage = () => {
       const res = await axios.get("/driver/trips");
       setTrips(res.data);
     } catch (err) {
-      console.error("Error fetching trips:", err);
+      logApiError("Error fetching trips:", err);
     }
   };
 
@@ -50,7 +51,7 @@ const DriverExpensesPage = () => {
       setShowForm(false);
       fetchExpenses();
     } catch (err) {
-      console.error("Error submitting expense:", err);
+      logApiError("Error submitting expense:", err);
       setError("Failed to add expense. Check your inputs.");
     }
   };

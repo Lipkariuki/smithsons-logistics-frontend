@@ -1,3 +1,4 @@
+import { logApiError, logApiWarning } from "../../utils/logSafeError";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosAuth from "../../utils/axiosAuth"; // ✅ correct import
@@ -81,20 +82,20 @@ const AdminDashboard = () => {
         setPage(1);
       })
       .catch((err) => {
-        console.error("Fetch orders failed:", err);
+        logApiError("Fetch orders failed:", err);
       });
   };
 
   const fetchDrivers = () => {
     axiosAuth.get("/users/?role=driver")
       .then((res) => setAvailableDrivers(res.data))
-      .catch((err) => console.error("Fetch drivers failed:", err));
+      .catch((err) => logApiError("Fetch drivers failed:", err));
   };
 
   const fetchVehicles = () => {
     axiosAuth.get("/vehicles/")
       .then((res) => setAvailableVehicles(res.data))
-      .catch((err) => console.error("Fetch vehicles failed:", err));
+      .catch((err) => logApiError("Fetch vehicles failed:", err));
   };
 
   const computeLitres = (amount, price) => {
@@ -379,11 +380,11 @@ const AdminDashboard = () => {
                 reason: 'Admin manual adjustment',
               });
             } catch (e2) {
-              console.warn('Revenue update failed (PUT fallback):', e2);
+              logApiWarning('Revenue update failed (PUT fallback):', e2);
               // Do not throw; continue with the rest to avoid blocking assignments
             }
           } else {
-            console.warn('Revenue update failed (PATCH):', e);
+            logApiWarning('Revenue update failed (PATCH):', e);
             // Do not throw; continue with the rest to avoid blocking assignments
           }
         }
@@ -399,7 +400,7 @@ const AdminDashboard = () => {
             description: editFormData.expense_description,
           });
         } else {
-          console.warn('Skipped expense: invalid amount', editFormData.expense_amount);
+          logApiWarning('Skipped expense: invalid amount', editFormData.expense_amount);
         }
       }
 
@@ -430,18 +431,18 @@ const AdminDashboard = () => {
                   await axiosAuth.put(`/trips/${editFormData.trip_id}/commission`, { rate_percent: rate });
                   updated = true;
                 } catch (e3) {
-                  console.warn('Commission update failed (all attempts):', e1, e2, e3);
+                  logApiWarning('Commission update failed (all attempts):', e1, e2, e3);
                 }
               }
             } else {
-              console.warn('Commission update failed (PATCH):', e1);
+              logApiWarning('Commission update failed (PATCH):', e1);
             }
           }
           if (!updated) {
             // Non-blocking warning; proceed
           }
         } else {
-          console.warn('Skipped commission update: invalid rate', editFormData.commission_rate);
+          logApiWarning('Skipped commission update: invalid rate', editFormData.commission_rate);
         }
       }
 
@@ -451,7 +452,7 @@ const AdminDashboard = () => {
       setMessage("Record updated successfully.");
       setTimeout(() => setMessage(""), 3000);
     } catch (err) {
-      console.error("Save failed:", err);
+      logApiError("Save failed:", err);
       const reason = err.response?.data?.detail || err.message;
       setError(`Update failed: ${reason}`);
       setTimeout(() => setError(""), 4000);

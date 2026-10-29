@@ -1,3 +1,4 @@
+import { logApiError } from "../utils/logSafeError";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../utils/axiosAuth";
@@ -40,7 +41,7 @@ const Login = () => {
         setError("Unknown user role. Access denied.");
       }
     } catch (err) {
-      console.error("Login failed:", err);
+      logApiError("Login failed:", err);
       setError("Invalid phone or password");
     }
   };

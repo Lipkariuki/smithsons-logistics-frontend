@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
@@ -72,7 +73,7 @@ const RevenueDashboard = () => {
       setOrders(data);
       setFiltered(data);
     } catch (err) {
-      console.error("Error fetching filtered orders:", err);
+      logApiError("Error fetching filtered orders:", err);
       setOrders([]);
       setFiltered([]);
     }
@@ -93,7 +94,7 @@ const RevenueDashboard = () => {
       setOrders(data);
       setFiltered(data);
     } catch (err) {
-      console.error("Error fetching orders:", err);
+      logApiError("Error fetching orders:", err);
       setOrders([]);
       setFiltered([]);
     }

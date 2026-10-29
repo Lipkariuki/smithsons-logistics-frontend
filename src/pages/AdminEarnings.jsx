@@ -1,3 +1,4 @@
+import { logApiError } from "../utils/logSafeError";
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import {
@@ -16,7 +17,7 @@ function AdminEarnings() {
   useEffect(() => {
     axios.get("/admin/earnings") // ✅ No more localhost
       .then((res) => setData(res.data))
-      .catch((err) => console.error("Failed to fetch admin earnings:", err));
+      .catch((err) => logApiError("Failed to fetch admin earnings:", err));
   }, []);
 
   if (!data) return <p className="p-4">Loading earnings data...</p>;

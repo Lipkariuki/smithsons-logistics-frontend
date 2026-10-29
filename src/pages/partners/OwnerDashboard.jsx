@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "../../utils/axiosAuth";
@@ -11,7 +12,7 @@ const OwnerDashboard = () => {
       .get("/partner-dashboard/")
       .then((res) => setMetrics(res.data))
       .catch((err) => {
-        console.error("Failed to load metrics:", err);
+        logApiError("Failed to load metrics:", err);
         setError(err.message);
       });
   }, []);

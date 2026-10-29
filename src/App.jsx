@@ -26,6 +26,7 @@ import PlatformEarningsComingSoon from "./pages/admin/PlatformEarningsComingSoon
 import PartnerOrdersDashboard from "./pages/partners/PartnerOrdersDashboard";
 // import CalculatorPage from "./pages/CalculatorPage"; // removed
 import IdleLogout from "./components/IdleLogout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => {
   return (
@@ -35,6 +36,7 @@ const App = () => {
       <Route path="/login" element={<LoginPage />} />
 
       {/* Admin routes */}
+      <Route element={<ProtectedRoute role="admin" />}>
       <Route path="/admin" element={<SidebarLayout />}>
         <Route index element={<AdminDashboard />} />
         <Route path="home" element={<Navigate to="/admin/dashboard" />} />
@@ -55,15 +57,20 @@ const App = () => {
         { /* <Route path="calculator" element={<CalculatorPage />} /> */ }
       </Route>
 
+      </Route>
       {/* Partner/owner routes */}
+      <Route element={<ProtectedRoute role="owner" />}>
       <Route path="/partner/dashboard" element={<OwnerDashboard />} />
       <Route path="/partner/orders" element={<PartnerOrdersDashboard />} />
 
+      </Route>
       {/* Driver routes */}
+      <Route element={<ProtectedRoute role="driver" />}>
       <Route path="/driver/home" element={<DriverHomePage />} />
       <Route path="/driver/trips" element={<DriverTripsPage />} />
       <Route path="/driver/expenses" element={<DriverExpensesPage />} />
 
+      </Route>
       {/* fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

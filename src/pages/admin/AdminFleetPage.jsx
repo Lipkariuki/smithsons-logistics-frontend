@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
@@ -34,7 +35,7 @@ const AdminFleetPage = () => {
       setOwners(Array.isArray(ownersRes.data) ? ownersRes.data : []);
       setVehicles(Array.isArray(vehiclesRes.data) ? vehiclesRes.data : []);
     } catch (e) {
-      console.error("Failed to load fleet:", e);
+      logApiError("Failed to load fleet:", e);
       setError("Could not load owners or vehicles.");
     } finally {
       setLoading(false);

@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 import React, { useEffect, useMemo, useState } from "react";
 import axiosAuth from "../../utils/axiosAuth";
 import { CSVLink } from "react-csv";
@@ -86,19 +87,19 @@ const AdminOrdersPage = () => {
         setOrders(sortedOrders);
         setFilteredOrders(sortedOrders);
       })
-      .catch((err) => console.error("Fetch orders failed:", err));
+      .catch((err) => logApiError("Fetch orders failed:", err));
   };
 
   const fetchDrivers = () => {
     axiosAuth.get("/users/?role=driver")
       .then((res) => setAvailableDrivers(res.data))
-      .catch((err) => console.error("Fetch drivers failed:", err));
+      .catch((err) => logApiError("Fetch drivers failed:", err));
   };
 
   const fetchVehicles = () => {
     axiosAuth.get("/vehicles/")
       .then((res) => setAvailableVehicles(res.data))
-      .catch((err) => console.error("Fetch vehicles failed:", err));
+      .catch((err) => logApiError("Fetch vehicles failed:", err));
   };
 
   const fetchDropdownMetadata = async () => {
@@ -107,7 +108,7 @@ const AdminOrdersPage = () => {
       setProductTypes(res.data.product_types || []);
       setDestinations(res.data.destinations || []);
     } catch (err) {
-      console.error("Failed to load metadata:", err);
+      logApiError("Failed to load metadata:", err);
     }
   };
 

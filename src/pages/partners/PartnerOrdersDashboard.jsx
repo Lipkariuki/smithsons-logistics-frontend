@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "../../utils/axiosAuth"; // ✅ custom axios with token
@@ -17,7 +18,7 @@ const PartnerOrdersDashboard = () => {
         const res = await axios.get("/partner/orders");
         setOrders(res.data);
       } catch (err) {
-        console.error("Error fetching partner orders:", err);
+        logApiError("Error fetching partner orders:", err);
         setError("Could not load partner orders.");
       } finally {
         setLoading(false);

@@ -1,3 +1,4 @@
+import { logApiError } from "../utils/logSafeError";
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "../utils/axiosAuth"; // ✅ use the shared axios instance
 import Pagination from "../components/Pagination";
@@ -32,7 +33,7 @@ const ExpensesPage = () => {
       setTotalRows(res.data.total || 0);
       setTotalAmount(res.data.total_amount || 0);
     } catch (err) {
-      console.error("Failed to fetch expenses:", err);
+      logApiError("Failed to fetch expenses:", err);
     }
   };
 
@@ -55,7 +56,7 @@ const ExpensesPage = () => {
       cancelEdit();
       loadExpenses();
     } catch (e) {
-      console.error("Failed to update expense:", e);
+      logApiError("Failed to update expense:", e);
     }
   };
 
@@ -64,7 +65,7 @@ const ExpensesPage = () => {
       await axios.delete(`/expenses/${id}`);
       loadExpenses();
     } catch (e) {
-      console.error("Failed to delete expense:", e);
+      logApiError("Failed to delete expense:", e);
     }
   };
 
@@ -78,7 +79,7 @@ const ExpensesPage = () => {
       const data = Array.isArray(res.data) ? res.data : [];
       setOrderOptions(data);
     } catch (err) {
-      console.error("Failed to load order options:", err);
+      logApiError("Failed to load order options:", err);
       setOrderOptions([]);
     } finally {
       setSearching(false);
@@ -124,7 +125,7 @@ const ExpensesPage = () => {
         loadExpenses(1, perPage);
       }
     } catch (err) {
-      console.error("Failed to submit expense:", err);
+      logApiError("Failed to submit expense:", err);
       const reason = err.response?.data?.detail || err.message || "Unknown error";
       setSubmitError(`Failed to submit expense: ${reason}`);
     }

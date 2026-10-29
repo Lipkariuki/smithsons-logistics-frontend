@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 import React, { useEffect, useState } from "react";
 import axios from "../../utils/axiosAuth";
 
@@ -14,7 +15,7 @@ const DriverTripsPage = () => {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching driver trips:", err);
+        logApiError("Error fetching driver trips:", err);
         setError("Could not load your assigned trips.");
         setLoading(false);
       });

@@ -1,3 +1,4 @@
+import { logApiError } from "../../utils/logSafeError";
 // src/pages/admin/AdminTripsPage.jsx
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -25,7 +26,7 @@ const AdminTripsPage = () => {
         setExpensesMap({});
       }
     } catch (err) {
-      console.error("Error loading trips:", err);
+      logApiError("Error loading trips:", err);
       setError("Could not load trips or expenses.");
     } finally {
       setLoading(false);

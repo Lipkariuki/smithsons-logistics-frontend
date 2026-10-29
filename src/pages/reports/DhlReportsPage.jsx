@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axiosAuth from "../../utils/axiosAuth";
+import MonthlyExpenseReports from "./MonthlyExpenseReports";
 
 const currency = new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES" });
 
@@ -12,6 +13,9 @@ const DhlReportsPage = () => {
     return base.toISOString().slice(0, 10);
   }, [today]);
   const defaultEnd = useMemo(() => today.toISOString().slice(0, 10), [today]);
+
+  const [expenseUploadOpen, setExpenseUploadOpen] = useState(false);
+  const [monthlyExpenseBusy, setMonthlyExpenseBusy] = useState(false);
 
   const [owners, setOwners] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -204,6 +208,8 @@ const DhlReportsPage = () => {
             Upload DHL monthly files, review revenue, and generate partner payslips.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button id="open-monthly-expense-upload" type="button" className="app-button-secondary" disabled={monthlyExpenseBusy} onClick={() => setExpenseUploadOpen(true)}>Upload Expenses Excel</button>
         <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
           <span className="app-button-primary">
             {uploading ? "Uploading..." : "Upload DHL Excel"}
@@ -216,6 +222,7 @@ const DhlReportsPage = () => {
             disabled={uploading}
           />
         </label>
+        </div>
       </div>
 
       {(error || message) && (
@@ -330,6 +337,13 @@ const DhlReportsPage = () => {
           </table>
         </div>
       </section>
+
+      <MonthlyExpenseReports
+        uploadOpen={expenseUploadOpen}
+        onOpenUpload={() => setExpenseUploadOpen(true)}
+        onCloseUpload={() => setExpenseUploadOpen(false)}
+        onBusyChange={setMonthlyExpenseBusy}
+      />
 
       <section className="app-card p-4 space-y-4">
         <h2 className="app-section-title">Generate Payslip</h2>

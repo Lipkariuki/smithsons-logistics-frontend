@@ -105,12 +105,25 @@ const ReportsPage = () => {
     return reports.slice(start, start + perPage);
   }, [reports, page, perPage]);
 
-  const downloadPdf = (vehicleId) => {
+  const downloadPdf = async (vehicleId) => {
     const params = new URLSearchParams();
     if (startDate) params.set("start_date", startDate);
     if (endDate) params.set("end_date", endDate);
-    const url = `${import.meta.env.VITE_API_BASE_URL}/reports/pdf/${vehicleId}?${params.toString()}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    setError("");
+    try {
+      const response = await axiosAuth.get(`/reports/pdf/${vehicleId}?${params}`, { responseType: "blob" });
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      const filename = response.headers["content-disposition"]?.match(/filename="([^"]+)"/)?.[1];
+      link.download = filename || `Smithsons-Transport-Statement-${vehicleId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setError("Could not download the report. Please try again.");
+    }
   };
 
   return (
