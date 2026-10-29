@@ -84,6 +84,7 @@ export function buildOptions(config) {
   if (Object.keys(reference_columns).length && !config.referenceReason.trim()) throw new Error('Explain how you verified the meaning of the manual comparison columns.');
   if (Object.values(config.dateDispositions || {}).some(d => d.action && !d.reason?.trim())) throw new Error('Explain why each historical row is excluded from this reporting month.');
   return {
+    ...(config.rawWorkbookId ? { raw_workbook_id: config.rawWorkbookId } : {}),
     approved_mappings, corrections, reason: config.reason,
     verified_no_activity: { ...config.noActivity },
     source_verification: config.sourceChecked ? config.sourceReference.trim() : '',

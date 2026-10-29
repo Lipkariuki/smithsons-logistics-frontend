@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axiosAuth from '../../utils/axiosAuth';
 import './MonthlyExpenseReports.css';
+import SavedMonthlyFiles from './SavedMonthlyFiles';
 import {
   ROOT, STATUS_LABELS, FINANCIAL_LABELS, COMPARISON_LABELS, currentMonth, monthDate, monthLabel,
   formatKes, negative, referenceCandidates, issueText, rowIssues, buildOptions, uploadForm, revisionForm, apiError,
@@ -8,7 +9,7 @@ import {
 
 const initialConfig = () => ({ mappings: {}, corrections: {}, noActivity: {}, sourceChecked: false,
   sourceReference: '', reason: '', previousId: null, sheetName: '', referencesChecked: false,
-  referenceColumns: {}, referenceReason: '', dateDispositions: {}, storedId: null, storedHash: '' });
+  referenceColumns: {}, referenceReason: '', dateDispositions: {}, storedId: null, storedHash: '', rawWorkbookId: null });
 
 function ComparisonTable({ row }) {
   const entries = Object.entries(row.comparisons || {});
@@ -45,6 +46,7 @@ function TruckTable({ report, editable, config, change, disabled, onStatement, o
           <div className="space-y-4 min-w-0">
             {approval?.can_confirm && !editable && <button type="button" className="app-button-primary" disabled={disabled} onClick={() => onConfirmTruck(row)}>Confirm this truck</button>}
             {approval?.record && <p className="text-sm text-violet-800">Confirmed: {approval.record.confirmed_at}. Review reason: {approval.record.reason}</p>}
+            {row.dhl_source_snapshot?.length > 0 && row.gross == null && <p className="text-sm text-amber-900">DHL revenue records are saved for this truck. Gross is awaiting source verification, not missing. Review the saved raw workbook and completeness evidence in a corrected report version.</p>}
             {approval?.review_issue && <p className="text-sm text-amber-900">{approval.review_issue}</p>}
             {(approval?.record || ['confirmed', 'superseded'].includes(report.status)) && row.id && <button type="button" className="app-button-secondary" disabled={disabled} onClick={() => onStatement(row)}>Generate / download truck statement</button>}
             {approval?.current && approval.current.expense_row_id !== row.id && <button type="button" className="app-button-secondary" disabled={disabled} onClick={() => onStatement({...row,id:approval.current.expense_row_id},approval.current.report_version)}>Download confirmed version {approval.current.report_version} statement</button>}
@@ -82,6 +84,7 @@ function SourceDateReview({ report, editable, config, change, disabled }) {
   const rows = review?.date_issues || [];
   if (!review) return <p className="text-sm text-amber-900">Original raw trips workbook is required before this report can be confirmed.</p>;
   return <div className="space-y-3"><h3 className="font-semibold text-violet-900">Source date review</h3>
+    {report.raw_source_file && <p className="text-sm text-violet-800">This report uses saved DHL source version {report.raw_source_file.version}: {report.raw_source_file.original_filename}.</p>}
     <p className="text-sm">{review.sheet}: {rows.length ? 'Review every affected row. Excluding a historical row does not delete or move it.' : 'All source transaction dates match this reporting month.'}</p>
     {rows.length > 0 && <div className="overflow-x-auto"><table className="app-table" aria-label="Source date issues">
       <thead><tr>{['Excel row', 'Original date', 'Truck', 'Reference', 'Amount', 'Issue and decision'].map(label => <th key={label}>{label}</th>)}</tr></thead>
@@ -107,6 +110,9 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
   const [config, setConfig] = useState(initialConfig);
   const [file, setFile] = useState(null);
   const [rawFile, setRawFile] = useState(null);
+  const [rawArchiveId, setRawArchiveId] = useState(null);
+  const [filesRefresh, setFilesRefresh] = useState(0);
+  const [filesBusy, setFilesBusy] = useState(false);
   const [dirty, setDirty] = useState(true);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -127,7 +133,7 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
   const configChanged = (key, value) => { setConfig(previous => ({ ...previous, [key]: value })); setDirty(true); setError(''); };
 
   useEffect(() => { active.current = true; return () => { active.current = false; sequence.current += 1; }; }, []);
-  useEffect(() => { onBusyChange?.(!!busy); }, [busy, onBusyChange]);
+  useEffect(() => { onBusyChange?.(!!busy || filesBusy); }, [busy, filesBusy, onBusyChange]);
   useEffect(() => { if (uploadOpen) section.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, [uploadOpen]);
 
   function clearEditor() {
@@ -150,7 +156,7 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
       if (active.current && request === sequence.current) setBusy('');
     }
   }
-  function acceptReport(data) { setReport(data); clearEditor(); onCloseUpload(); }
+  function acceptReport(data) { setReport(data); clearEditor(); onCloseUpload(); setFilesRefresh(v => v + 1); }
   function loadReport(id) {
     run('load', () => axiosAuth.get(`${ROOT}/expense-imports/${id}`).then(response => response.data), data => {
       if (data.reporting_month.slice(0, 7) !== month) { setError('This saved report belongs to a different month. Select its month first.'); return; }
@@ -174,12 +180,14 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
       else if (result.noConfirmed) setNotice(`No report is currently confirmed for this month. Showing saved ${STATUS_LABELS[result.data.status].toLowerCase()} version ${result.data.version}.`);
     });
   }
+  useEffect(() => { if (month) loadMonth(); }, [month]);
+
   function newVersion() {
     const decisions = report.decisions || {};
     setConfig({ ...initialConfig(), mappings: decisions.approved_mappings || {},
       corrections: {}, noActivity: decisions.verified_no_activity || {},
-      dateDispositions: decisions.date_dispositions || {},
-      previousId: report.id, storedId: report.id, storedHash: report.file_sha256,
+      dateDispositions: rawArchiveId && rawArchiveId !== decisions.historical_review?.archive_id ? {} : decisions.date_dispositions || {},
+      previousId: report.id, storedId: report.id, storedHash: report.file_sha256, rawWorkbookId: rawArchiveId || decisions.historical_review?.archive_id || null,
       sheetName: decisions.sheet_name || '', referenceColumns: decisions.reference_columns || {} });
     setPreview({ ...report, id: undefined, version: null, status: 'preview' });
     setFile(null); setRawFile(null); setDirty(true); setError('');
@@ -188,6 +196,7 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
   }
   function submitWorkbook(mode) {
     const options = buildOptions(config);
+    if (!options.raw_workbook_id && rawArchiveId) options.raw_workbook_id = rawArchiveId;
     if (config.storedId) {
       const form = revisionForm(config, options, rawFile); form.append('mode', mode);
       return axiosAuth.post(`${ROOT}/expense-imports/${config.storedId}/revise`, form).then(response => response.data);
@@ -246,12 +255,14 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
     <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
       <div><h2 id="monthly-expense-title" className="app-section-title">Monthly Expense Reports</h2><p className="text-sm text-slate-600 mt-1">Review monthly truck expenses and net balances.</p></div>
       <div className="flex flex-wrap items-end gap-2"><label className="text-sm font-medium text-violet-800">Reporting month
-        <input type="month" className="app-input block mt-1" aria-label="Expense reporting month" value={month} disabled={!!busy || dialogOpen} onChange={event => {
-          setMonth(event.target.value); setReport(null); clearEditor(); setError(''); setNotice(''); setDuplicateId(null);
+        <input type="month" className="app-input block mt-1" aria-label="Expense reporting month" value={month} disabled={!!busy || filesBusy || dialogOpen} onChange={event => {
+          setMonth(event.target.value); setRawArchiveId(null); setReport(null); clearEditor(); setError(''); setNotice(''); setDuplicateId(null);
         }} /></label>
         <button type="button" className="app-button-secondary" onClick={loadMonth} disabled={!!busy || !month || dialogOpen}>View saved report</button>
       </div>
     </div>
+    <SavedMonthlyFiles month={month} onBusyChange={setFilesBusy} refreshKey={filesRefresh} onArchive={setRawArchiveId} onViewReport={loadReport}
+      onExpenseUpload={() => { if (report) newVersion(); onOpenUpload(); }} onChanged={() => { setFilesRefresh(v => v + 1); setNotice('DHL file saved. Review it in the expense report before confirming. Earlier saved figures stay unchanged until you save a new version.'); }} />
     {error && <div role="alert" className="app-alert-error">{error}{duplicateId && <button type="button" className="block mt-2 underline font-semibold" disabled={!!busy} onClick={() => loadReport(duplicateId)}>Open saved report</button>}</div>}
     {notice && <div role="status" className="app-alert-success">{notice}</div>}
     {busy && <p role="status" className="text-sm text-violet-800">{({ preview: 'Checking the workbook and calculating figures…', save: 'Saving draft…', confirm: 'Confirming monthly report…', load: 'Loading saved report…' })[busy] || 'Preparing download…'}</p>}
@@ -273,7 +284,7 @@ export default function MonthlyExpenseReports({ uploadOpen, onCloseUpload, onOpe
         </label>}
         {config.previousId && <p className="text-sm text-violet-800">Preparing a new version of a saved report. The saved workbook is available below. Upload a replacement only if the file itself changed.</p>}
         <details className="text-sm"><summary className="cursor-pointer font-medium text-violet-800">Source workbook and date checks</summary><div className="grid md:grid-cols-2 gap-3 mt-3">
-          <label>Raw trips workbook (required before confirmation)<input ref={rawInput} type="file" accept=".xlsx" className="app-input block mt-1 w-full" aria-label="Raw trips workbook" onChange={event => { setRawFile(event.target.files?.[0] || null); configChanged('dateDispositions', {}); }} /></label>
+          <label>Raw trips workbook (only if the saved source is missing or being replaced)<input ref={rawInput} type="file" accept=".xlsx" className="app-input block mt-1 w-full" aria-label="Raw trips workbook" onChange={event => { setRawFile(event.target.files?.[0] || null); configChanged('dateDispositions', {}); }} /></label>
           <label>Worksheet name, if there is more than one sheet<input className="app-input block mt-1 w-full" value={config.sheetName} onChange={event => configChanged('sheetName', event.target.value)} /></label>
         </div></details>
         <div className="bg-white border border-violet-100 rounded-xl p-3 space-y-2">

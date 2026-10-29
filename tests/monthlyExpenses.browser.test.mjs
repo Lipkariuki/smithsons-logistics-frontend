@@ -65,6 +65,7 @@ async function setup({seed=false}={}) {
     const respond=(status,data)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
     if(state.delay)await new Promise(resolve=>setTimeout(resolve,state.delay));
     if(state.fail?.path===pathname){const error=state.fail;state.fail=null;return respond(error.status,error.data);}
+    if(pathname==='/dhl-reports/monthly-files')return respond(200,{archive_available:true,raw_files:[],expense_files:state.records.map(r=>({id:r.id,version:r.version,status:r.status,review_status:'needs_review',original_filename:'expense.xlsx',download:`/dhl-reports/monthly-files/report/${r.id}/expenses`})),parsed_dhl:{records:2,gross:'1000.00'},source_verified:false});
     if(pathname.startsWith('/dhl-reports/monthly-statement-documents/from-row/'))return respond(200,{id:77,expense_row_id:3});
     if(pathname==='/dhl-reports/monthly-statement-documents/77/pdf')return route.fulfill({status:200,contentType:'application/pdf',body:Buffer.from('%PDF-1.4\nsynthetic test only')});
     if(pathname==='/users/me')return respond(200,{id:7,role:'admin',name:'Sample Admin'});
@@ -105,6 +106,8 @@ async function setup({seed=false}={}) {
   await page.goto(`${base}/admin/reports/dhl`);
   const panel=page.locator('#monthly-expense-reports');await panel.waitFor();
   await panel.getByLabel('Expense reporting month').fill('2026-02');
+  await page.waitForLoadState('networkidle');
+  await page.waitForFunction(()=>document.querySelector('#monthly-expense-reports')?.getAttribute('aria-busy')==='false');
   return {context,page,panel,state};
 }
 async function openUpload(test) {
@@ -189,9 +192,10 @@ test('saved history, corrected versions and superseded figures are distinct',asy
 test('draft-only months are discoverable without presenting them as confirmed',async()=>{
   const t=await setup();try{
     t.state.records.push(snapshot(readyOptions,{id:1,version:1,status:'draft'}));
+    const before=t.state.requests.filter(r=>r.path==='/dhl-reports/monthly-net-summary').length;
     await t.panel.getByRole('button',{name:'View saved report',exact:true}).click();await t.panel.getByLabel('Monthly report version').waitFor();
     assert.match(await t.panel.innerText(),/No report is currently confirmed/);assert.match(await t.panel.innerText(),/saved draft version 1/);
-    assert.ok(t.state.requests.filter(r=>r.path==='/dhl-reports/monthly-net-summary').length===2);
+    assert.ok(t.state.requests.filter(r=>r.path==='/dhl-reports/monthly-net-summary').length===before+2);
   }finally{await t.context.close();}
 });
 

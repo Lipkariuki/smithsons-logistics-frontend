@@ -83,7 +83,7 @@ const DhlReportsPage = () => {
       const res = await axiosAuth.post("/dhl-reports/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setMessage(`Uploaded. Inserted ${res.data.inserted}. Unmatched vehicles ${res.data.unmatched_vehicles}.`);
+      setMessage(`Uploaded. Inserted ${res.data.inserted}. Unmatched vehicles ${res.data.unmatched_vehicles}.${res.data.file_retained === true ? " Original file saved." : res.data.file_retained === false ? " Original file was not retained; check Saved Monthly Files." : ""}`);
       fetchSummary();
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to upload DHL report");
