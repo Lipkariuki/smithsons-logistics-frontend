@@ -1,0 +1,8 @@
+import fs from 'node:fs';
+import {pathToFileURL} from 'node:url';
+export const base=process.env.FRONTEND_TEST_URL||'http://127.0.0.1:8067',api='http://127.0.0.1:8071';
+if(!['localhost','127.0.0.1'].includes(new URL(base).hostname))throw Error('Local testing only');
+export const fixture=name=>JSON.parse(fs.readFileSync(process.env[name]));
+export const file=(f,key,name)=>({name,mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(f[key],'base64')});
+export async function open(month){const cfg=fixture('LEGACY_AUTH_FIXTURE_JSON');const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE));const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH});const context=await browser.newContext({acceptDownloads:true,viewport:{width:1360,height:1000}});context.setDefaultTimeout(12000);await context.route('**/*',r=>['localhost','127.0.0.1'].includes(new URL(r.request().url()).hostname)?r.continue():r.abort());const page=await context.newPage();await page.goto(base+'/login');await page.getByPlaceholder('Phone',{exact:true}).fill('0700000001');await page.getByPlaceholder('Password',{exact:true}).fill(cfg.password);await page.getByRole('button',{name:'Login',exact:true}).click();await page.waitForURL('**/admin/dashboard');await page.goto(base+'/admin/reports/dhl');await page.getByLabel('Reporting month',{exact:true}).fill(month);await page.getByRole('table',{name:'Truck payouts',exact:true}).waitFor();return{browser,context,page};}
+export async function state(context,page,month){return(await context.request.get(`${api}/dhl-reports/monthly-payouts/${month}-01`,{headers:{Authorization:'Bearer '+await page.evaluate(()=>localStorage.getItem('token'))}})).json();}
