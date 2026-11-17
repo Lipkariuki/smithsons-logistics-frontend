@@ -35,7 +35,7 @@ export default function DhlMonthlyPayouts(){
     const saved=(await axiosAuth.post(`${ROOT}/monthly-files/dhl`,form)).data;
     // Evidence attachment never replaces existing revenue. Import only a new
     // empty month through the existing guarded uploader, with strict preflight.
-    const check=saved.verification,invalid=check.issues.some(i=>i.code!=='source_manifest_mismatch');
+    const check=saved.verification,invalid=check.issues.some(i=>!['source_manifest_mismatch','inclusive_amount_mismatch','source_marked_error'].includes(i.code));
     if(current.files.parsed_dhl.records===0&&check.workbook_group_count>0&&!invalid){
      const original=new FormData();original.append('file',file);
      await axiosAuth.post(`${ROOT}/upload`,original,{params:{reporting_month:monthDate(month)}});
@@ -101,7 +101,7 @@ export default function DhlMonthlyPayouts(){
   </>}
   {truck&&createPortal(<div className="dhl-payout-dialog-overlay"><section role="dialog" aria-modal="true" aria-label={`Review ${truck.normalized_plate}`} className="dhl-payout-dialog" onKeyDown={e=>{if(e.key==='Escape'&&!busy)setTruck(null);}}>
    <h2 className="text-xl font-semibold">{truck.normalized_plate} · {monthLabel(month)}</h2><p>{truck.vehicle_owner_snapshot?.owner_name||'Owner needs matching'}</p>
-   <dl className="space-y-1">{truck.revenue_breakdown&&<><div className="flex justify-between"><dt>DIST</dt><dd>{formatKes(truck.revenue_breakdown.distribution)}</dd></div><div className="flex justify-between"><dt>Offloading</dt><dd>{formatKes(truck.revenue_breakdown.offloading)}</dd></div></>}{['gross','operating_expenses','commission_base','commission','net_payable'].map((key,i)=><div key={key} className="flex justify-between gap-3"><dt>{['Gross','Total expenses','Commission base','7% commission','Net payable'][i]}</dt><dd>{truck[key]==null?'Needs review':formatKes(truck[key])}</dd></div>)}</dl>
+   <dl className="space-y-1">{truck.revenue_breakdown&&<><div className="flex justify-between"><dt>DIST</dt><dd>{formatKes(truck.revenue_breakdown.distribution)}</dd></div><div className="flex justify-between"><dt>Offloading</dt><dd>{formatKes(truck.revenue_breakdown.offloading)}</dd></div>{truck.revenue_breakdown.surcharge!=null&&<div className="flex justify-between"><dt>DIST surcharge</dt><dd>{formatKes(truck.revenue_breakdown.surcharge)}</dd></div>}</>}{['gross','operating_expenses','commission_base','commission','net_payable'].map((key,i)=><div key={key} className="flex justify-between gap-3"><dt>{['Gross','Total expenses','Commission base','7% commission','Net payable'][i]}</dt><dd>{truck[key]==null?'Needs review':formatKes(truck[key])}</dd></div>)}{truck.dhl_admin_fee!=null&&<div className="flex justify-between gap-3"><dt>Administration fee (5% of DIST including surcharge)</dt><dd>{formatKes(truck.dhl_admin_fee)}</dd></div>}</dl>
    <ul className="text-sm border-t pt-3">{Object.entries(truck.deductions||{}).filter(([,v])=>nonzero(v.amount)).map(([k,v])=><li key={k} className="flex justify-between gap-3"><span>{v.original_header||v.label}</span><span>{formatKes(v.amount)}</span></li>)}</ul>
    {String(truck.net_payable).startsWith('-')&&<p className="text-amber-900">Expenses exceed gross. Negative balance retained.</p>}
    {truck.gross==null&&<p className="text-amber-900">This truck has no verified DHL revenue.</p>}
