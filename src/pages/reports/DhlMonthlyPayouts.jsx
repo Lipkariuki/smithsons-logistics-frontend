@@ -12,12 +12,13 @@ const ready=row=>row.truck_confirmation?.can_confirm??(row.gross!=null&&row.net_
 export default function DhlMonthlyPayouts(){
  const [month,setMonth]=useState(currentMonth),[data,setData]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [truck,setTruck]=useState(null),[ack,setAck]=useState(false),[noActivity,setNoActivity]=useState(''),[mappings,setMappings]=useState({}),[documents,setDocuments]=useState(null);
- const generation=useRef(0);
+ const generation=useRef(0),categoryReview=useRef(null);
  const endpoint=`${ROOT}/monthly-payouts/${monthDate(month)}`;
  useEffect(()=>{const token=++generation.current;setData(null);setDocuments(null);setTruck(null);setError('');setNotice('');
   axiosAuth.get(endpoint).then(r=>{if(token===generation.current){setData(r.data);setMappings(r.data.report?.decisions?.approved_mappings||{});}}).catch(async e=>{if(token===generation.current)setError((await apiError(e)).message);});
  },[month]);
  const report=data?.report,files=data?.files,raw=files?.raw_files?.[0],net=files?.expense_files?.[0],rows=[...(report?.rows||[]),...(files?.unmatched_trucks||[])];
+ const unknownHeaders=(report?.header_mappings||[]).filter(h=>h.classification==='unknown');
  const pending=rows.filter(r=>!r.truck_confirmation?.record&&!ready(r)).length;
  function expected(current){return {expected_report_id:current.files.latest_report_id,expected_raw_id:current.files.raw_files.find(f=>f.source_kind==='archive')?.id||null};}
  async function reload(){const next=(await axiosAuth.get(endpoint)).data;setData(next);return next;}
@@ -49,6 +50,7 @@ export default function DhlMonthlyPayouts(){
  async function download(path,filename){const response=await axiosAuth.get(path,{responseType:'blob'});const url=URL.createObjectURL(response.data),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  async function pdf(rowId){const doc=(await axiosAuth.post(`${ROOT}/monthly-statement-documents/from-row/${rowId}`)).data;await download(`${ROOT}/monthly-statement-documents/${doc.id}/pdf`,`smithsons_transport_statement_${doc.id}.pdf`);}
  function review(row){setTruck(row);setAck(false);setNoActivity('');}
+ function reviewExpenseColumns(){setTruck(null);requestAnimationFrame(()=>{categoryReview.current?.scrollIntoView({behavior:'smooth',block:'center'});categoryReview.current?.querySelector('select')?.focus();});}
  async function issue(){await run(async()=>{
   let current=data,row=truck;
   if(!current.report.id){current=(await axiosAuth.post(endpoint+'/sync',expected(current))).data;row=current.report.rows.find(r=>r.normalized_plate===truck.normalized_plate);setData(current);}
@@ -66,7 +68,7 @@ export default function DhlMonthlyPayouts(){
   <p className="text-sm">{entry?'Uploaded':kind==='dhl'?'Upload DHL workbook.':'Upload expense workbook.'}</p>
   {entry&&<><p className="font-medium break-all">{entry.original_filename||'Retained workbook'}</p><button type="button" disabled={busy} className="text-violet-700 underline" onClick={()=>run(()=>download(entry.download,entry.original_filename||'original.xlsx'))}>Download {kind==='dhl'?'DHL':'expense'} workbook</button></>}
   <label className="app-button-secondary inline-block cursor-pointer">{entry?'Upload corrected file':'Upload Excel'}<input type="file" accept=".xlsx" className="hidden" aria-label={title} disabled={busy||!files?.archive_available} onChange={e=>upload(kind,e)}/></label>
-  {kind==='expenses'&&report?.header_mappings?.some(h=>h.classification==='unknown')&&<p>New expense columns need classification in Advanced Details.</p>}
+  {kind==='expenses'&&report?.header_mappings?.some(h=>h.classification==='unknown')&&<p>Choose how to treat the new expense columns below to calculate payouts.</p>}
   {kind==='dhl'&&entry&&entry.verification&&!entry.verification.matches&&<p className="text-sm text-amber-900">{entry.verification.date_issues?.some(i=>['out_of_period_date','invalid_source_date','missing_source_date'].includes(i.code))?`DHL dates are outside ${monthLabel(month)}.`:'DHL source needs review.'}</p>}
  </section>;}
  const currentApproval=truck&&data?.approvals.find(a=>a.normalized_plate===truck.normalized_plate);
@@ -77,19 +79,24 @@ export default function DhlMonthlyPayouts(){
   {notice&&<p role="status" className="rounded-xl bg-violet-50 text-violet-900 p-3">{notice}</p>}
   {!files?<p>Loading saved month…</p>:<>
    <div className="payout-files">{card('dhl','DHL Trips Summary',raw)}{card('expenses','Net Summary Expenses',net)}</div>
+   {unknownHeaders.length>0&&<section ref={categoryReview} aria-label="Expense category review" className="app-section space-y-3 border-amber-300">
+    <h2 className="app-section-title">Review new expense columns</h2>
+    <p>Expenses and net payable are waiting for these choices. For each new column, choose Operating expense to include its amounts, or Ignore to leave it out. Nothing is deducted until you save.</p>
+    {unknownHeaders.map(h=><label key={h.column} className="block text-sm">Classify {h.original_header}<select aria-label={`Classify ${h.original_header}`} className="app-select ml-2" value={Object.hasOwn(mappings,h.original_header)?mappings[h.original_header]===null?'ignore':'expense':''} onChange={e=>setMappings({...mappings,[h.original_header]:e.target.value==='ignore'?null:h.original_header})}><option value="" disabled>Choose…</option><option value="expense">Operating expense</option><option value="ignore">Ignore</option></select></label>)}
+    <button type="button" className="app-button-secondary" disabled={busy||unknownHeaders.some(h=>!Object.hasOwn(mappings,h.original_header))} onClick={updateReview}>Save category choices</button>
+    <p className="text-sm">Uses the saved workbooks. No need to upload again. This does not confirm trucks or issue payslips.</p>
+   </section>}
    <div className="payout-totals">{keys.map((key,index)=>{const total=report?.totals?.[key],amount=key==='gross'&&raw?.verification?.matches?raw.verification.workbook_totals.gross:total?.amount;
     return <section key={key} className="app-section"><h2 className="text-sm text-slate-600">{labels[index]}</h2><p className="text-xl font-semibold text-violet-950">{amount!=null?formatKes(amount):'Needs review'}</p>{total?.missing_rows>0&&<p className="text-xs text-slate-600">{total.missing_rows} trucks need review. Known: {formatKes(total.known_subtotal)}</p>}</section>;
    })}</div>
    <section className="app-section space-y-3"><div className="flex justify-between"><h2 className="app-section-title">Truck payouts</h2><p className="text-sm">{pending?`${pending} trucks need review.`:rows.length?'Ready for truck review.':'Upload both workbooks.'}</p></div>
     <div className="payout-table-scroll"><table className="app-table" aria-label="Truck payouts"><thead><tr>{['Truck','Owner','DHL gross','Expenses','Commission','Net payable','Payslip'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>
-     {rows.map(row=><tr key={row.normalized_plate}><td>{row.normalized_plate}</td><td>{row.vehicle_owner_snapshot?.owner_name||'Needs matching'}</td>{keys.map(key=><td key={key}>{row[key]==null?'Needs review':formatKes(row[key])}</td>)}<td><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>review(row)} aria-label={`Review ${row.normalized_plate}`}>{row.truck_confirmation?.record?'Download payslip':'Review'}</button></td></tr>)}
+     {rows.map(row=><tr key={row.normalized_plate}><td>{row.normalized_plate}{row.source_row&&<p className="text-xs text-slate-600">Expense workbook · {row.source_worksheet} · row {row.source_row}</p>}</td><td>{row.vehicle_owner_snapshot?.owner_name||'Needs matching'}</td>{keys.map(key=><td key={key}>{row[key]==null?'Needs review':formatKes(row[key])}</td>)}<td><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>review(row)} aria-label={`Review ${row.normalized_plate}`}>{row.truck_confirmation?.record?'Download payslip':'Review'}</button></td></tr>)}
     </tbody></table></div>
    </section>
    <details className="app-section"><summary className="cursor-pointer font-medium text-violet-900">Advanced Details</summary><div className="space-y-4 mt-4">
     <p className="text-sm">Saved originals and confirmed statements stay in history. Corrected uploads create new financial versions.</p>
-    {(report?.header_mappings||[]).filter(h=>h.classification==='unknown').map(h=><label key={h.column} className="block text-sm">Classify {h.original_header}<select aria-label={`Classify ${h.original_header}`} className="app-select ml-2" value={Object.hasOwn(mappings,h.original_header)?mappings[h.original_header]===null?'ignore':'expense':''} onChange={e=>setMappings({...mappings,[h.original_header]:e.target.value==='ignore'?null:h.original_header})}><option value="" disabled>Choose…</option><option value="expense">Operating expense</option><option value="ignore">Ignore</option></select></label>)}
-    {(report?.header_mappings||[]).some(h=>h.classification==='unknown')&&<button type="button" className="app-button-secondary" disabled={busy} onClick={updateReview}>Save category choices</button>}
-    {(report?.issues||[]).filter(i=>i.blocking).map((i,n)=><p key={'report'+n} className="text-sm text-amber-900">{issueText(i)}</p>)}
+    {(report?.issues||[]).filter(i=>i.blocking&&(i.code!=='unknown_column'||!unknownHeaders.length)).map((i,n)=><p key={'report'+n} className="text-sm text-amber-900">{issueText(i)}</p>)}
     {(raw?.verification?.differences||[]).map((i,n)=><p key={'diff'+n} className="text-sm text-amber-900">{i.truck} · {i.reference} · {i.date}: {i.reason.replaceAll('_',' ')}. Workbook DIST {i.workbook?.distribution??'missing'}, Offloading {i.workbook?.offloading??'missing'}; saved DIST {i.saved?.distribution??'missing'}, Offloading {i.saved?.offloading??'missing'}.</p>)}
     {(raw?.verification?.issues||[]).map((i,n)=><p key={n} className="text-sm text-amber-900">{i.message}</p>)}
     {(files.raw_files||[]).map((f,n)=><p key={'raw'+n} className="text-sm">DHL source version {f.version??'retained'} · {f.original_filename}<button type="button" className="ml-2 underline" disabled={busy} onClick={()=>run(()=>download(f.download,f.original_filename||'original.xlsx'))}>Original DHL workbook</button></p>)}
@@ -101,11 +108,13 @@ export default function DhlMonthlyPayouts(){
   </>}
   {truck&&createPortal(<div className="dhl-payout-dialog-overlay"><section role="dialog" aria-modal="true" aria-label={`Review ${truck.normalized_plate}`} className="dhl-payout-dialog" onKeyDown={e=>{if(e.key==='Escape'&&!busy)setTruck(null);}}>
    <h2 className="text-xl font-semibold">{truck.normalized_plate} · {monthLabel(month)}</h2><p>{truck.vehicle_owner_snapshot?.owner_name||'Owner needs matching'}</p>
+   {truck.source_row&&<p className="text-sm text-slate-600">From {net?.original_filename||'the expense workbook'} · {truck.source_worksheet} · row {truck.source_row}. A listed truck is retained even if it has no DHL trips.</p>}
+   {unknownHeaders.length>0&&<div className="rounded-xl bg-amber-50 p-3 space-y-2"><p>Expense totals are waiting for classification of: {unknownHeaders.map(h=>h.original_header).join(', ')}.</p><button type="button" disabled={busy} className="app-button-secondary" onClick={reviewExpenseColumns}>Review expense columns</button></div>}
    <dl className="space-y-1">{truck.revenue_breakdown&&<><div className="flex justify-between"><dt>DIST</dt><dd>{formatKes(truck.revenue_breakdown.distribution)}</dd></div><div className="flex justify-between"><dt>Offloading</dt><dd>{formatKes(truck.revenue_breakdown.offloading)}</dd></div>{truck.revenue_breakdown.surcharge!=null&&<div className="flex justify-between"><dt>DIST surcharge</dt><dd>{formatKes(truck.revenue_breakdown.surcharge)}</dd></div>}</>}{['gross','operating_expenses','commission_base','commission','net_payable'].map((key,i)=><div key={key} className="flex justify-between gap-3"><dt>{['Gross','Total expenses','Commission base','7% commission','Net payable'][i]}</dt><dd>{truck[key]==null?'Needs review':formatKes(truck[key])}</dd></div>)}{truck.dhl_admin_fee!=null&&<div className="flex justify-between gap-3"><dt>Administration fee (5% of DIST including surcharge)</dt><dd>{formatKes(truck.dhl_admin_fee)}</dd></div>}</dl>
    <ul className="text-sm border-t pt-3">{Object.entries(truck.deductions||{}).filter(([,v])=>nonzero(v.amount)).map(([k,v])=><li key={k} className="flex justify-between gap-3"><span>{v.original_header||v.label}</span><span>{formatKes(v.amount)}</span></li>)}</ul>
    {String(truck.net_payable).startsWith('-')&&<p className="text-amber-900">Expenses exceed gross. Negative balance retained.</p>}
    {truck.gross==null&&<p className="text-amber-900">This truck has no verified DHL revenue.</p>}
-   {(truck.issues||[]).filter(i=>i.blocking).map((i,n)=><p className="text-sm text-amber-900" key={n}>{issueText(i,truck)}</p>)}
+   {(truck.issues||[]).filter(i=>i.blocking&&(i.code!=='preview_unresolved'||!unknownHeaders.length)).map((i,n)=><p className="text-sm text-amber-900" key={n}>{issueText(i,truck)}</p>)}
    {truck.gross==null&&report&&report.rows.some(r=>r.normalized_plate===truck.normalized_plate)&&<label className="block text-sm">If you verified no monthly business, record the evidence<input aria-label="No activity evidence" value={noActivity} onChange={e=>setNoActivity(e.target.value)} className="app-input w-full mt-1"/><button type="button" disabled={busy||!noActivity.trim()} className="app-button-secondary mt-2" onClick={updateReview}>Save no-activity review</button></label>}
    {currentApproval&&currentApproval.expense_row_id!==truck.id&&<p className="text-sm text-amber-900">A previous confirmed statement is preserved. Issuing these revised figures records a separate correction; it does not change payment history.</p>}
    {!truck.truck_confirmation?.record&&ready(truck)&&<label className="flex gap-2 text-sm"><input type="checkbox" checked={ack} onChange={e=>setAck(e.target.checked)}/>I reviewed this truck’s workbook amounts and approve this statement.</label>}
