@@ -35,3 +35,6 @@
 .dhl-payout-dialog button {margin:.4rem .5rem .4rem 0;}
 @media(max-width:1100px){.dhl-payouts .payout-totals {grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:650px){.dhl-payouts .payout-files,.dhl-payouts .payout-totals {grid-template-columns:1fr;}.dhl-payout-dialog {padding:1rem;}}
+
+.dhl-payout-dialog h3 {font-size:.95rem;margin:1rem 0 .3rem;font-weight:650;}
+.dhl-payout-dialog .payout-final {font-size:1.1rem;font-weight:700;border-top:2px solid #ddd6fe;}

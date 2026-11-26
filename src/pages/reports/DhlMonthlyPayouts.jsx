@@ -5,16 +5,16 @@ import axiosAuth from '../../utils/axiosAuth';
 import {ROOT,currentMonth,monthDate,monthLabel,formatKes,apiError,issueText,canReviewNoActivity,revenueReviewMessage,displayedFinancial,financialStatusLabel} from './monthlyExpenseUi';
 
 const keys=['gross','operating_expenses','commission','net_payable'];
-const labels=['Total DHL gross','Total operating expenses','Total commission','Total net payable'];
+const labels=['Total DHL gross','Total operating expenses','Total Smithsons commission','Total net payable'];
 const nonzero=value=>value!=null&&/[1-9]/.test(String(value));
 const ready=row=>row.truck_confirmation?.can_confirm??(row.gross!=null&&row.net_payable!=null&&!!row.vehicle_id&&!row.issues?.some(i=>i.blocking));
 
 export default function DhlMonthlyPayouts(){
  const [month,setMonth]=useState(currentMonth),[data,setData]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const [truck,setTruck]=useState(null),[ack,setAck]=useState(false),[noActivity,setNoActivity]=useState(''),[mappings,setMappings]=useState({}),[documents,setDocuments]=useState(null);
+ const [truck,setTruck]=useState(null),[ack,setAck]=useState(false),[noActivity,setNoActivity]=useState(''),[mappings,setMappings]=useState({});
  const generation=useRef(0),categoryReview=useRef(null);
  const endpoint=`${ROOT}/monthly-payouts/${monthDate(month)}`;
- useEffect(()=>{const token=++generation.current;setData(null);setDocuments(null);setTruck(null);setError('');setNotice('');
+ useEffect(()=>{const token=++generation.current;setData(null);setTruck(null);setError('');setNotice('');
   axiosAuth.get(endpoint).then(r=>{if(token===generation.current){setData(r.data);setMappings(r.data.report?.decisions?.approved_mappings||{});}}).catch(async e=>{if(token===generation.current)setError((await apiError(e)).message);});
  },[month]);
  const report=data?.report,files=data?.files,raw=files?.raw_files?.[0],net=files?.expense_files?.[0],rows=[...(report?.rows||[]),...(files?.unmatched_trucks||[])];
@@ -71,10 +71,9 @@ export default function DhlMonthlyPayouts(){
   {entry&&<><p className="font-medium break-all">{entry.original_filename||'Retained workbook'}</p><button type="button" disabled={busy} className="text-violet-700 underline" onClick={()=>run(()=>download(entry.download,entry.original_filename||'original.xlsx'))}>Download {kind==='dhl'?'DHL':'expense'} workbook</button></>}
   <label className="app-button-secondary inline-block cursor-pointer">{entry?'Upload corrected file':'Upload Excel'}<input type="file" accept=".xlsx" className="hidden" aria-label={title} disabled={busy||!files?.archive_available} onChange={e=>upload(kind,e)}/></label>
   {kind==='expenses'&&report?.header_mappings?.some(h=>h.classification==='unknown')&&<p>Choose how to treat the new expense columns below to calculate payouts.</p>}
-  {kind==='dhl'&&reconciliation?.source_verified&&<p className="text-sm">Source-inclusive totals verified. Supported rounding differences are retained in the audit.</p>}
+
   {kind==='dhl'&&entry&&entry.verification&&!entry.verification.matches&&!reconciliation?.source_verified&&centReview?.calculated_gross==null&&<p className="text-sm text-amber-900">{entry.verification.date_issues?.some(i=>['out_of_period_date','invalid_source_date','missing_source_date'].includes(i.code))?`DHL dates are outside ${monthLabel(month)}.`:'DHL source needs review.'}</p>}
  </section>;}
- const currentApproval=truck&&data?.approvals.find(a=>a.normalized_plate===truck.normalized_plate);
  return <div className="app-page dhl-payouts space-y-6" aria-busy={busy}>
   <header className="app-page-header payout-header"><div><h1 className="app-title">DHL Monthly Payouts</h1><p className="text-sm text-slate-600">Upload two workbooks. Review truck payouts. Download payslips.</p></div>
    <label className="font-medium text-sm">Reporting month<input type="month" className="app-input block mt-1" value={month} disabled={busy} onChange={e=>e.target.value&&setMonth(e.target.value)}/></label></header>
@@ -93,42 +92,38 @@ export default function DhlMonthlyPayouts(){
    <div className="payout-totals">{keys.map((key,index)=>{const total=report?.totals?.[key],amount=key==='gross'&&reconciliation?.source_verified?reconciliation.gross:key==='gross'&&centReview?.calculated_gross!=null?centReview.calculated_gross:key==='gross'&&raw?.verification?.matches?raw.verification.workbook_totals.gross:total?.amount;
     return <section key={key} className="app-section"><h2 className="text-sm text-slate-600">{labels[index]}</h2><p className="text-xl font-semibold text-violet-950">{amount!=null?formatKes(amount):'Needs review'}</p>{total?.missing_rows>0&&<p className="text-xs text-slate-600">{total.missing_rows} trucks need review. Known: {formatKes(total.known_subtotal)}</p>}</section>;
    })}</div>
-   <section className="app-section space-y-3"><div className="flex justify-between"><h2 className="app-section-title">Truck payouts</h2><p className="text-sm">{pending?`${pending} trucks need review.`:rows.length?'Ready for truck review.':'Upload both workbooks.'}</p></div>
-    <div className="payout-table-scroll"><table className="app-table" aria-label="Truck payouts"><thead><tr>{['Truck','Owner','DHL gross','Expenses','Commission','Net payable','Payslip'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>
-     {rows.map(row=><tr key={row.normalized_plate}><td>{row.normalized_plate}{financialStatusLabel(row)&&<p className="text-xs font-medium">{financialStatusLabel(row)}</p>}{row.source_row&&<p className="text-xs text-slate-600">Expense workbook · {row.source_worksheet} · row {row.source_row}</p>}</td><td>{row.vehicle_owner_snapshot?.owner_name||'Needs matching'}</td>{keys.map(key=><td key={key}>{displayedFinancial(row,key)==null?'Needs review':formatKes(displayedFinancial(row,key))}</td>)}<td><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>review(row)} aria-label={`Review ${row.normalized_plate}`}>{row.truck_confirmation?.record?'Download payslip':eligible(row)?'Review payslip':'Resolve issues'}</button></td></tr>)}
+   <section className="app-section space-y-3"><div className="flex justify-between"><h2 className="app-section-title">Truck payouts</h2><p className="text-sm">{pending?`${pending} trucks need attention.`:rows.length?`${rows.length} trucks`:'Upload both workbooks.'}</p></div>
+    <div className="payout-table-scroll"><table className="app-table" aria-label="Truck payouts"><thead><tr>{['Truck','Owner','Gross','Expenses','Commission','Net Payable','Payslip'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>
+     {rows.map(row=><tr key={row.normalized_plate}><td>{row.normalized_plate}{financialStatusLabel(row)&&<p className="text-xs font-medium">{financialStatusLabel(row)}</p>}</td><td>{row.vehicle_owner_snapshot?.owner_name||'Needs matching'}</td>{keys.map(key=><td key={key}>{displayedFinancial(row,key)==null?'Needs review':formatKes(displayedFinancial(row,key))}</td>)}<td><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>review(row)} aria-label={`Review ${row.normalized_plate}`}>{row.truck_confirmation?.record||eligible(row)?'View payslip':'Resolve issue'}</button></td></tr>)}
     </tbody></table></div>
    </section>
-   <details className="app-section"><summary className="cursor-pointer font-medium text-violet-900">Advanced Details</summary><div className="space-y-4 mt-4">
-    <p className="text-sm">Saved originals and confirmed statements stay in history. Corrected uploads create new financial versions.</p>
-    {(report?.issues||[]).filter(i=>i.blocking&&(i.code!=='unknown_column'||!unknownHeaders.length)).map((i,n)=><p key={'report'+n} className="text-sm text-amber-900">{issueText(i)}</p>)}
-    {(raw?.verification?.differences||[]).map((i,n)=><p key={'diff'+n} className="text-sm text-amber-900">{i.truck} · {i.reference} · {i.date}: {i.reason.replaceAll('_',' ')}. Workbook DIST {i.workbook?.distribution??'missing'}, Offloading {i.workbook?.offloading??'missing'}; saved DIST {i.saved?.distribution??'missing'}, Offloading {i.saved?.offloading??'missing'}.</p>)}
-    {(raw?.verification?.issues||[]).map((i,n)=><p key={n} className="text-sm text-amber-900">{i.message}</p>)}
-    {(files.raw_files||[]).map((f,n)=><p key={'raw'+n} className="text-sm">DHL source version {f.version??'retained'} · {f.original_filename}<button type="button" className="ml-2 underline" disabled={busy} onClick={()=>run(()=>download(f.download,f.original_filename||'original.xlsx'))}>Original DHL workbook</button></p>)}
-    {(files.expense_files||[]).map(f=><p key={f.id} className="text-sm">Financial version {f.version} · {f.status} · {f.original_filename} · {f.uploaded_at}<button type="button" className="ml-2 underline" onClick={()=>run(()=>download(f.download,f.original_filename))}>Original workbook</button></p>)}
-    <button type="button" className="app-button-secondary" disabled={busy||!files.expense_files?.length} onClick={()=>run(async()=>{const result=await Promise.all(files.expense_files.map(f=>axiosAuth.get(`${ROOT}/expense-imports/${f.id}/statement-documents`)));setDocuments(result.flatMap(r=>Array.isArray(r.data)?r.data:[]));})}>View statement archive</button>
-    {documents&&<div>{documents.length?documents.map(doc=><p key={doc.id}><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>run(()=>download(`${ROOT}/monthly-statement-documents/${doc.id}/pdf`,`smithsons_transport_statement_${doc.id}.pdf`))}>Download archived statement {doc.id}</button></p>):<p>No statements have been issued for these report versions.</p>}</div>}
-    {(data.approvals||[]).map(a=><p key={a.id} className="text-sm">{a.normalized_plate} · confirmed financial version {a.report_version}<button type="button" className="ml-2 underline" disabled={busy} onClick={()=>run(()=>pdf(a.expense_row_id))}>Download confirmed statement</button></p>)}
+   <details className="app-section"><summary>Source diagnostics</summary><div className="space-y-3 mt-4">
+    {(report?.issues||[]).filter(i=>i.blocking).map((i,n)=><p key={'report'+n}>{issueText(i)}</p>)}
+    {(raw?.verification?.issues||[]).map((i,n)=><p key={'source'+n}>{i.message}</p>)}
    </div></details>
   </>}
   {truck&&createPortal(<div className="dhl-payout-dialog-overlay"><section role="dialog" aria-modal="true" aria-label={`Review ${truck.normalized_plate}`} className="dhl-payout-dialog" onKeyDown={e=>{if(e.key==='Escape'&&!busy)setTruck(null);}}>
    <h2 className="text-xl font-semibold">{truck.normalized_plate} · {monthLabel(month)}</h2><p>{truck.vehicle_owner_snapshot?.owner_name||'Owner needs matching'}</p>
-   {truck.source_row&&<p className="text-sm text-slate-600">From {net?.original_filename||'the expense workbook'} · {truck.source_worksheet} · row {truck.source_row}. A listed truck is retained even if it has no DHL trips.</p>}
    {unknownHeaders.length>0&&<div className="rounded-xl bg-amber-50 p-3 space-y-2"><p>Expense totals are waiting for classification of: {unknownHeaders.map(h=>h.original_header).join(', ')}.</p><button type="button" disabled={busy} className="app-button-secondary" onClick={reviewExpenseColumns}>Review expense columns</button></div>}
    {financialStatusLabel(truck)&&<p className="font-medium">{financialStatusLabel(truck)}</p>}
    {truck.provisional_financial&&<p className="text-amber-900">Provisional source-inclusive figures — not approved for payout. Resolve the source checks before confirmation.</p>}
-   <dl className="space-y-1">{truck.revenue_breakdown&&<><div className="flex justify-between"><dt>DIST</dt><dd>{formatKes(truck.revenue_breakdown.distribution)}</dd></div><div className="flex justify-between"><dt>Offloading</dt><dd>{formatKes(truck.revenue_breakdown.offloading)}</dd></div>{truck.revenue_breakdown.surcharge!=null&&<div className="flex justify-between"><dt>DIST surcharge</dt><dd>{formatKes(truck.revenue_breakdown.surcharge)}</dd></div>}{truck.revenue_breakdown.rounding_difference!=null&&<div className="flex justify-between"><dt>Source rounding reconciliation</dt><dd>{formatKes(truck.revenue_breakdown.rounding_difference)}</dd></div>}</>}{['gross','operating_expenses','commission_base','commission','net_payable'].map((key,i)=><div key={key} className="flex justify-between gap-3"><dt>{['Gross','Total expenses','Commission base','7% commission','Net payable'][i]}</dt><dd>{displayedFinancial(truck,key)==null?'Needs review':formatKes(displayedFinancial(truck,key))}</dd></div>)}{displayedFinancial(truck,'dhl_admin_fee')!=null&&<div className="flex justify-between gap-3"><dt>Administration fee (5% of DIST including surcharge)</dt><dd>{formatKes(displayedFinancial(truck,'dhl_admin_fee'))}</dd></div>}</dl>
-   <ul className="text-sm border-t pt-3">{Object.entries(truck.deductions||{}).filter(([,v])=>nonzero(v.amount)).map(([k,v])=><li key={k} className="flex justify-between gap-3"><span>{v.original_header||v.label}</span><span>{formatKes(v.amount)}</span></li>)}</ul>
-   {(truck.issues||[]).some(i=>['source_cent_difference_calculated','source_rounding_reconciled'].includes(i.code))&&<details className="text-sm"><summary>Source rounding audit</summary>{truck.issues.filter(i=>['source_cent_difference_calculated','source_rounding_reconciled'].includes(i.code)).map((i,n)=><p key={n}>{i.message}</p>)}</details>}
-   {(truck.issues||[]).some(i=>!i.blocking&&!['source_cent_difference_calculated','source_rounding_reconciled'].includes(i.code))&&<details className="text-sm"><summary>Additional review warnings</summary>{truck.issues.filter(i=>!i.blocking&&!['source_cent_difference_calculated','source_rounding_reconciled'].includes(i.code)).map((i,n)=><p key={n}>{issueText(i,truck)}</p>)}</details>}
+   <h3>Revenue</h3>
+   <dl>{truck.revenue_breakdown&&<>{[['distribution','DIST'],['offloading','Offloading'],['surcharge','Surcharge']].map(([key,label])=>truck.revenue_breakdown[key]!=null&&<div key={key}><dt>{label}</dt><dd>{formatKes(truck.revenue_breakdown[key])}</dd></div>)}
+    {nonzero(truck.revenue_breakdown.rounding_difference)&&<div><dt>Source rounding reconciliation</dt><dd>{formatKes(truck.revenue_breakdown.rounding_difference)}</dd></div>}</>}
+    <div><dt>Gross</dt><dd>{displayedFinancial(truck,'gross')==null?'Needs review':formatKes(displayedFinancial(truck,'gross'))}</dd></div></dl>
+   <h3>Deductions</h3>
+   <dl>{displayedFinancial(truck,'dhl_admin_fee')!=null&&<div><dt>DHL administration fee (5% of DIST including surcharge)</dt><dd>{formatKes(displayedFinancial(truck,'dhl_admin_fee'))}</dd></div>}
+    {Object.entries(truck.deductions||{}).filter(([,v])=>nonzero(v.amount)).map(([k,v])=><div key={k}><dt>{v.original_header||v.label}</dt><dd>{formatKes(v.amount)}</dd></div>)}
+    {['operating_expenses','commission'].map((key,i)=><div key={key}><dt>{['Total expenses','Smithsons commission (7%)'][i]}</dt><dd>{displayedFinancial(truck,key)==null?'Needs review':formatKes(displayedFinancial(truck,key))}</dd></div>)}</dl>
+   <dl className="payout-final"><div><dt>Net payable</dt><dd>{displayedFinancial(truck,'net_payable')==null?'Needs review':formatKes(displayedFinancial(truck,'net_payable'))}</dd></div></dl>
    {String(truck.net_payable).startsWith('-')&&<p className="text-amber-900">Expenses exceed gross. Negative balance retained.</p>}
    {truck.gross==null&&<p className="text-amber-900">{revenueReviewMessage(truck)}</p>}
    {(truck.issues||[]).filter(i=>i.blocking&&(i.code!=='preview_unresolved'||!unknownHeaders.length)).map((i,n)=><p className="text-sm text-amber-900" key={n}>{issueText(i,truck)}</p>)}
    {truck.gross==null&&canReviewNoActivity(truck)&&report&&report.rows.some(r=>r.normalized_plate===truck.normalized_plate)&&<label className="block text-sm">If you verified no monthly business, record the evidence<input aria-label="No activity evidence" value={noActivity} onChange={e=>setNoActivity(e.target.value)} className="app-input w-full mt-1"/><button type="button" disabled={busy||!noActivity.trim()} className="app-button-secondary mt-2" onClick={updateReview}>Save no-activity review</button></label>}
-   {currentApproval&&currentApproval.expense_row_id!==truck.id&&<p className="text-sm text-amber-900">A previous confirmed statement is preserved. Issuing these revised figures records a separate correction; it does not change payment history.</p>}
    {!truck.truck_confirmation?.record&&eligible(truck)&&<label className="flex gap-2 text-sm"><input type="checkbox" checked={ack} onChange={e=>setAck(e.target.checked)}/>I reviewed this truck’s workbook amounts and approve this statement.</label>}
    <div className="flex flex-wrap gap-3"><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>setTruck(null)}>Close</button>
     {truck.truck_confirmation?.record?<button type="button" disabled={busy} className="app-button-primary" onClick={()=>run(()=>pdf(truck.id))}>Download payslip</button>:<button type="button" disabled={busy||!ack||!eligible(truck)} className="app-button-primary" onClick={issue}>Confirm and issue payslip</button>}
-    {currentApproval&&currentApproval.expense_row_id!==truck.id&&<button type="button" className="app-button-secondary" disabled={busy} onClick={()=>run(()=>pdf(currentApproval.expense_row_id))}>Download previous statement</button>}
+
    </div>
   </section></div>,document.body)}
  </div>;

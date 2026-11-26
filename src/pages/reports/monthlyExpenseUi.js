@@ -152,4 +152,4 @@ export function revisionForm(config, options, rawFile) {
 }
 
 export function displayedFinancial(row,key){return row[key]??row.provisional_financial?.[key]??null;}
-export function financialStatusLabel(row){return {confirmed:'Confirmed snapshot',ready:'Ready for review',calculated_source_review:'Provisional — source review required',activity_verification_required:'Verify monthly activity',blocked:'Resolve validation issues'}[row.financial_status]||'';}
+export function financialStatusLabel(row){if(row.revenue_status==='verified_no_activity')return 'No DHL trips';return {confirmed:'Confirmed',ready:'',calculated_source_review:'Provisional — source review required',activity_verification_required:'Verify monthly activity',blocked:'Resolve issue'}[row.financial_status]||'';}
