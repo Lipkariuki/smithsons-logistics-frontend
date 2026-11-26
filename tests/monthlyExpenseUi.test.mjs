@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   currentMonth, monthDate, formatKes, negative, normalizeHeader, referenceCandidates,
-  buildOptions, uploadForm, revisionForm, apiError, issueText, canReviewNoActivity, hasDhlTransportRows, revenueReviewMessage,
+  buildOptions, uploadForm, revisionForm, apiError, issueText, canReviewNoActivity, hasDhlTransportRows, revenueReviewMessage, displayedFinancial, financialStatusLabel,
 } from '../src/pages/reports/monthlyExpenseUi.js';
 
 const config = (overrides = {}) => ({ mappings: {}, corrections: {}, noActivity: {}, sourceChecked: false,
@@ -111,3 +111,5 @@ test('no-activity review is limited to missing revenue with no source rows',()=>
   assert.equal(hasDhlTransportRows({dhl_source_snapshot:[{ref_no:'EXISTING'}]}),true);
   assert.match(revenueReviewMessage({dhl_source_snapshot:[{}]}),/DHL rows exist/);
 });
+
+test('provisional display never replaces the approved financial fields',()=>{const r={gross:null,net_payable:null,financial_status:'calculated_source_review',provisional_financial:{gross:'100.00',net_payable:'50.00'}};assert.equal(displayedFinancial(r,'gross'),'100.00');assert.equal(r.gross,null);assert.match(financialStatusLabel(r),/Provisional/);assert.equal(displayedFinancial({...r,gross:'0.00'},'gross'),'0.00');});
