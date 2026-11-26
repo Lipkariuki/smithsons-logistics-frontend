@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import './DhlMonthlyPayouts.css';
 import {createPortal} from 'react-dom';
 import axiosAuth from '../../utils/axiosAuth';
-import {ROOT,currentMonth,monthDate,monthLabel,formatKes,apiError,issueText} from './monthlyExpenseUi';
+import {ROOT,currentMonth,monthDate,monthLabel,formatKes,apiError,issueText,canReviewNoActivity,revenueReviewMessage} from './monthlyExpenseUi';
 
 const keys=['gross','operating_expenses','commission','net_payable'];
 const labels=['Total DHL gross','Total operating expenses','Total commission','Total net payable'];
@@ -18,6 +18,7 @@ export default function DhlMonthlyPayouts(){
   axiosAuth.get(endpoint).then(r=>{if(token===generation.current){setData(r.data);setMappings(r.data.report?.decisions?.approved_mappings||{});}}).catch(async e=>{if(token===generation.current)setError((await apiError(e)).message);});
  },[month]);
  const report=data?.report,files=data?.files,raw=files?.raw_files?.[0],net=files?.expense_files?.[0],rows=[...(report?.rows||[]),...(files?.unmatched_trucks||[])];
+ const centReview=files?.cent_difference_review;
  const unknownHeaders=(report?.header_mappings||[]).filter(h=>h.classification==='unknown');
  const pending=rows.filter(r=>!r.truck_confirmation?.record&&!ready(r)).length;
  function expected(current){return {expected_report_id:current.files.latest_report_id,expected_raw_id:current.files.raw_files.find(f=>f.source_kind==='archive')?.id||null};}
@@ -59,6 +60,11 @@ export default function DhlMonthlyPayouts(){
   await axiosAuth.post(`${ROOT}/expense-rows/${row.id}/confirm`,{reason:'Administrator reviewed this truck’s workbook sources, expenses and payout before issuing its statement.',expected_current_confirmation_id:prior});
   await pdf(row.id);setTruck(null);await reload();setNotice('Payslip ready. The confirmed statement is saved.');
  });}
+ async function useCalculatedCentTotals(){await run(async()=>{
+  const next=(await axiosAuth.post(endpoint+'/sync',{...expected(data),accept_cent_differences:true})).data;
+  setData(next);if(truck)setTruck(next.report.rows.find(r=>r.normalized_plate===truck.normalized_plate));
+  setNotice('Calculated totals saved in a new report version. Original workbook amounts remain in the audit. No trucks were confirmed.');
+ });}
  async function updateReview(){await run(async()=>{
   const options={...expected(data),mappings};
   if(noActivity.trim())options.no_activity={...(report.decisions?.verified_no_activity||{}),[truck.normalized_plate]:noActivity.trim()};
@@ -69,7 +75,8 @@ export default function DhlMonthlyPayouts(){
   {entry&&<><p className="font-medium break-all">{entry.original_filename||'Retained workbook'}</p><button type="button" disabled={busy} className="text-violet-700 underline" onClick={()=>run(()=>download(entry.download,entry.original_filename||'original.xlsx'))}>Download {kind==='dhl'?'DHL':'expense'} workbook</button></>}
   <label className="app-button-secondary inline-block cursor-pointer">{entry?'Upload corrected file':'Upload Excel'}<input type="file" accept=".xlsx" className="hidden" aria-label={title} disabled={busy||!files?.archive_available} onChange={e=>upload(kind,e)}/></label>
   {kind==='expenses'&&report?.header_mappings?.some(h=>h.classification==='unknown')&&<p>Choose how to treat the new expense columns below to calculate payouts.</p>}
-  {kind==='dhl'&&entry&&entry.verification&&!entry.verification.matches&&<p className="text-sm text-amber-900">{entry.verification.date_issues?.some(i=>['out_of_period_date','invalid_source_date','missing_source_date'].includes(i.code))?`DHL dates are outside ${monthLabel(month)}.`:'DHL source needs review.'}</p>}
+  {kind==='dhl'&&centReview?.calculated_gross!=null&&<p className="text-sm">Original workbook retained. Approved one-cent differences use system-calculated totals.</p>}
+  {kind==='dhl'&&entry&&entry.verification&&!entry.verification.matches&&centReview?.calculated_gross==null&&<p className="text-sm text-amber-900">{entry.verification.date_issues?.some(i=>['out_of_period_date','invalid_source_date','missing_source_date'].includes(i.code))?`DHL dates are outside ${monthLabel(month)}.`:'DHL source needs review.'}</p>}
  </section>;}
  const currentApproval=truck&&data?.approvals.find(a=>a.normalized_plate===truck.normalized_plate);
  return <div className="app-page dhl-payouts space-y-6" aria-busy={busy}>
@@ -86,12 +93,19 @@ export default function DhlMonthlyPayouts(){
     <button type="button" className="app-button-secondary" disabled={busy||unknownHeaders.some(h=>!Object.hasOwn(mappings,h.original_header))} onClick={updateReview}>Save category choices</button>
     <p className="text-sm">Uses the saved workbooks. No need to upload again. This does not confirm trucks or issue payslips.</p>
    </section>}
-   <div className="payout-totals">{keys.map((key,index)=>{const total=report?.totals?.[key],amount=key==='gross'&&raw?.verification?.matches?raw.verification.workbook_totals.gross:total?.amount;
+   {centReview?.rows?.length>0&&!centReview.accepted&&<section className="app-section space-y-3" aria-label="One-cent source review">
+    <h2 className="app-section-title">Review one-cent source differences</h2>
+    <p>{centReview.rows.length} DIST rows differ by KES 0.01. Use calculated AMOUNT + SURCHARGE for these rows. Original workbook amounts stay in the audit; larger differences remain blocked.</p>
+    <button type="button" className="app-button-secondary" disabled={busy||!centReview.migration_ready} onClick={useCalculatedCentTotals}>Use calculated totals for one-cent differences</button>
+    {!centReview.migration_ready&&<p>The calculation update must be installed before this review can be saved. Contact the administrator.</p>}
+    <p className="text-sm">Creates a new report version from the saved workbooks. Does not confirm trucks or generate payslips.</p>
+   </section>}
+   <div className="payout-totals">{keys.map((key,index)=>{const total=report?.totals?.[key],amount=key==='gross'&&centReview?.calculated_gross!=null?centReview.calculated_gross:key==='gross'&&raw?.verification?.matches?raw.verification.workbook_totals.gross:total?.amount;
     return <section key={key} className="app-section"><h2 className="text-sm text-slate-600">{labels[index]}</h2><p className="text-xl font-semibold text-violet-950">{amount!=null?formatKes(amount):'Needs review'}</p>{total?.missing_rows>0&&<p className="text-xs text-slate-600">{total.missing_rows} trucks need review. Known: {formatKes(total.known_subtotal)}</p>}</section>;
    })}</div>
    <section className="app-section space-y-3"><div className="flex justify-between"><h2 className="app-section-title">Truck payouts</h2><p className="text-sm">{pending?`${pending} trucks need review.`:rows.length?'Ready for truck review.':'Upload both workbooks.'}</p></div>
     <div className="payout-table-scroll"><table className="app-table" aria-label="Truck payouts"><thead><tr>{['Truck','Owner','DHL gross','Expenses','Commission','Net payable','Payslip'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>
-     {rows.map(row=><tr key={row.normalized_plate}><td>{row.normalized_plate}{row.source_row&&<p className="text-xs text-slate-600">Expense workbook · {row.source_worksheet} · row {row.source_row}</p>}</td><td>{row.vehicle_owner_snapshot?.owner_name||'Needs matching'}</td>{keys.map(key=><td key={key}>{row[key]==null?'Needs review':formatKes(row[key])}</td>)}<td><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>review(row)} aria-label={`Review ${row.normalized_plate}`}>{row.truck_confirmation?.record?'Download payslip':'Review'}</button></td></tr>)}
+     {rows.map(row=><tr key={row.normalized_plate}><td>{row.normalized_plate}{row.source_row&&<p className="text-xs text-slate-600">Expense workbook · {row.source_worksheet} · row {row.source_row}</p>}</td><td>{row.vehicle_owner_snapshot?.owner_name||'Needs matching'}</td>{keys.map(key=><td key={key}>{row[key]==null?'Needs review':formatKes(row[key])}</td>)}<td><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>review(row)} aria-label={`Review ${row.normalized_plate}`}>{row.truck_confirmation?.record?'Download payslip':ready(row)?'Review payslip':'Resolve issues'}</button></td></tr>)}
     </tbody></table></div>
    </section>
    <details className="app-section"><summary className="cursor-pointer font-medium text-violet-900">Advanced Details</summary><div className="space-y-4 mt-4">
@@ -112,10 +126,11 @@ export default function DhlMonthlyPayouts(){
    {unknownHeaders.length>0&&<div className="rounded-xl bg-amber-50 p-3 space-y-2"><p>Expense totals are waiting for classification of: {unknownHeaders.map(h=>h.original_header).join(', ')}.</p><button type="button" disabled={busy} className="app-button-secondary" onClick={reviewExpenseColumns}>Review expense columns</button></div>}
    <dl className="space-y-1">{truck.revenue_breakdown&&<><div className="flex justify-between"><dt>DIST</dt><dd>{formatKes(truck.revenue_breakdown.distribution)}</dd></div><div className="flex justify-between"><dt>Offloading</dt><dd>{formatKes(truck.revenue_breakdown.offloading)}</dd></div>{truck.revenue_breakdown.surcharge!=null&&<div className="flex justify-between"><dt>DIST surcharge</dt><dd>{formatKes(truck.revenue_breakdown.surcharge)}</dd></div>}</>}{['gross','operating_expenses','commission_base','commission','net_payable'].map((key,i)=><div key={key} className="flex justify-between gap-3"><dt>{['Gross','Total expenses','Commission base','7% commission','Net payable'][i]}</dt><dd>{truck[key]==null?'Needs review':formatKes(truck[key])}</dd></div>)}{truck.dhl_admin_fee!=null&&<div className="flex justify-between gap-3"><dt>Administration fee (5% of DIST including surcharge)</dt><dd>{formatKes(truck.dhl_admin_fee)}</dd></div>}</dl>
    <ul className="text-sm border-t pt-3">{Object.entries(truck.deductions||{}).filter(([,v])=>nonzero(v.amount)).map(([k,v])=><li key={k} className="flex justify-between gap-3"><span>{v.original_header||v.label}</span><span>{formatKes(v.amount)}</span></li>)}</ul>
+   {(truck.issues||[]).some(i=>i.code==='source_cent_difference_calculated')&&<details className="text-sm"><summary>Calculated totals use approved one-cent differences</summary>{truck.issues.filter(i=>i.code==='source_cent_difference_calculated').map((i,n)=><p key={n}>{i.message}</p>)}</details>}
    {String(truck.net_payable).startsWith('-')&&<p className="text-amber-900">Expenses exceed gross. Negative balance retained.</p>}
-   {truck.gross==null&&<p className="text-amber-900">This truck has no verified DHL revenue.</p>}
+   {truck.gross==null&&<p className="text-amber-900">{revenueReviewMessage(truck)}</p>}
    {(truck.issues||[]).filter(i=>i.blocking&&(i.code!=='preview_unresolved'||!unknownHeaders.length)).map((i,n)=><p className="text-sm text-amber-900" key={n}>{issueText(i,truck)}</p>)}
-   {truck.gross==null&&report&&report.rows.some(r=>r.normalized_plate===truck.normalized_plate)&&<label className="block text-sm">If you verified no monthly business, record the evidence<input aria-label="No activity evidence" value={noActivity} onChange={e=>setNoActivity(e.target.value)} className="app-input w-full mt-1"/><button type="button" disabled={busy||!noActivity.trim()} className="app-button-secondary mt-2" onClick={updateReview}>Save no-activity review</button></label>}
+   {truck.gross==null&&canReviewNoActivity(truck)&&report&&report.rows.some(r=>r.normalized_plate===truck.normalized_plate)&&<label className="block text-sm">If you verified no monthly business, record the evidence<input aria-label="No activity evidence" value={noActivity} onChange={e=>setNoActivity(e.target.value)} className="app-input w-full mt-1"/><button type="button" disabled={busy||!noActivity.trim()} className="app-button-secondary mt-2" onClick={updateReview}>Save no-activity review</button></label>}
    {currentApproval&&currentApproval.expense_row_id!==truck.id&&<p className="text-sm text-amber-900">A previous confirmed statement is preserved. Issuing these revised figures records a separate correction; it does not change payment history.</p>}
    {!truck.truck_confirmation?.record&&ready(truck)&&<label className="flex gap-2 text-sm"><input type="checkbox" checked={ack} onChange={e=>setAck(e.target.checked)}/>I reviewed this truck’s workbook amounts and approve this statement.</label>}
    <div className="flex flex-wrap gap-3"><button type="button" disabled={busy} className="app-button-secondary" onClick={()=>setTruck(null)}>Close</button>

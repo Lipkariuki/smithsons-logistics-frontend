@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   currentMonth, monthDate, formatKes, negative, normalizeHeader, referenceCandidates,
-  buildOptions, uploadForm, revisionForm, apiError, issueText,
+  buildOptions, uploadForm, revisionForm, apiError, issueText, canReviewNoActivity, hasDhlTransportRows, revenueReviewMessage,
 } from '../src/pages/reports/monthlyExpenseUi.js';
 
 const config = (overrides = {}) => ({ mappings: {}, corrections: {}, noActivity: {}, sourceChecked: false,
@@ -100,4 +100,14 @@ test('saved revisions send the original hash and decisions without an expense up
 test('operating expense reference columns are comparisons only', () => {
   const columns=referenceCandidates(['TOTAL EXPENSES','NET PAID I'].map(original_header=>({original_header})));
   assert.deepEqual(columns.operating_expenses,['TOTAL EXPENSES']);assert.deepEqual(columns.net_payable,[]);
+});
+
+test('no-activity review is limited to missing revenue with no source rows',()=>{
+  const missing={revenue_status:'missing',dhl_source_snapshot:[]};
+  assert.equal(canReviewNoActivity(missing),true);
+  for(const row of [{revenue_status:'unimported'},{revenue_status:'incomplete'},
+    {...missing,dhl_source_snapshot:[{ref_no:'EXISTING'}]},
+    {...missing,cell_audit:{_dhl_transport:{transactions:[{source_row:88}]}}}])assert.equal(canReviewNoActivity(row),false);
+  assert.equal(hasDhlTransportRows({dhl_source_snapshot:[{ref_no:'EXISTING'}]}),true);
+  assert.match(revenueReviewMessage({dhl_source_snapshot:[{}]}),/DHL rows exist/);
 });

@@ -68,6 +68,18 @@ export function issueText(issue, row) {
   if (issue.code === 'dhl_incomplete') return `${truck}The month's DHL data has not been checked as complete.`;
   return truck + (messages[issue.code] || issue.message || 'Review this item.');
 }
+// Missing activity and invalid source rows are different review actions.
+export function hasDhlTransportRows(row) {
+  return !!(row.dhl_source_snapshot?.length || row.cell_audit?._dhl_transport?.transactions?.length);
+}
+export function canReviewNoActivity(row) {
+  return row.revenue_status === 'missing' && !hasDhlTransportRows(row);
+}
+export function revenueReviewMessage(row) {
+  if (hasDhlTransportRows(row)) return 'DHL rows exist for this truck. Resolve the source differences below; this is not a no-business month.';
+  if (canReviewNoActivity(row)) return 'No DHL transport rows were found for this truck in the selected month. Verify its activity before confirming zero revenue.';
+  return 'DHL revenue is not yet verified. Review the source checks below.';
+}
 export function rowIssues(row) {
   const issues = row.issues || [];
   return issues.filter(i => !(i.code === 'preview_unresolved' && issues.some(other => other.blocking && other.code !== i.code)));
