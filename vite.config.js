@@ -3,7 +3,15 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'smithsons-release-diagnostic',
+    transformIndexHtml() {
+      const commit = process.env.RENDER_GIT_COMMIT || '';
+      return /^[0-9a-f]{40}$/i.test(commit)
+        ? [{ tag: 'meta', attrs: { name: 'smithsons-release', content: commit.toLowerCase() }, injectTo: 'head' }]
+        : [];
+    },
+  }],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
